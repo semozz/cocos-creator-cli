@@ -1,245 +1,124 @@
 import { APIServer } from './api-server';
-import { readSettings, saveSettings } from './settings';
-import { MCPServerSettings } from './types';
+import { readSettings } from './settings';
 import { ToolManager } from './tools/tool-manager';
+import * as fs from 'fs-extra';
+import * as path from 'path';
+import * as os from 'os';
 
 let apiServer: APIServer | null = null;
 let toolManager: ToolManager;
+let heartbeatInterval: NodeJS.Timeout | null = null;
+let currentPort = 8585;
 
-/**
- * @en Registration method for the main process of Extension
- * @zh 为扩展的主进程的注册方法
- */
-export const methods: { [key: string]: (...any: any) => any } = {
-    /**
-     * @en Open the MCP server panel
-     * @zh 打开 MCP 服务器面板
-     */
-    openPanel() {
-        Editor.Panel.open('cocos-creator-connector');
-    },
+function getCliDir() {
+    return path.join(os.homedir(), '.cocos-creator-cli');
+}
 
+function getInstancesFile() {
+    return path.join(getCliDir(), 'instances.json');
+}
 
+function getStatusFile(port: number) {
+    return path.join(getCliDir(), 'status', `${port}.json`);
+}
 
-    /**
-     * @en Start the MCP server
-     * @zh 启动 MCP 服务器
-     */
-    async startServer() {
-        if (apiServer) {
-            // 确保使用最新的工具配置
-            const enabledTools = toolManager.getEnabledTools();
-            apiServer.updateEnabledTools(enabledTools);
-            await apiServer.start();
-        } else {
-            console.warn('[MCP插件] apiServer 未初始化');
+async function registerInstance(port: number) {
+    try {
+        const cliDir = getCliDir();
+        await fs.ensureDir(cliDir);
+        await fs.ensureDir(path.join(cliDir, 'status'));
+
+        const instancesFile = getInstancesFile();
+        let instances: Record<string, any> = {};
+        
+        if (await fs.pathExists(instancesFile)) {
+            try {
+                instances = await fs.readJson(instancesFile);
+            } catch (e) {
+                instances = {};
+            }
         }
-    },
 
-    /**
-     * @en Stop the MCP server
-     * @zh 停止 MCP 服务器
-     */
-    async stopServer() {
-        if (apiServer) {
-            apiServer.stop();
-        } else {
-            console.warn('[MCP插件] apiServer 未初始化');
-        }
-    },
-
-    /**
-     * @en Get server status
-     * @zh 获取服务器状态
-     */
-    getServerStatus() {
-        const status = apiServer ? apiServer.getStatus() : { running: false, port: 0, clients: 0 };
-        const settings = apiServer ? apiServer.getSettings() : readSettings();
-        return {
-            ...status,
-            settings: settings
+        const projectPath = Editor.Project.path || process.cwd();
+        
+        // Add or update this instance
+        instances[port.toString()] = {
+            port,
+            projectPath,
+            pid: process.pid,
+            version: Editor.App.version,
+            registeredAt: Date.now()
         };
-    },
 
-    /**
-     * @en Update server settings
-     * @zh 更新服务器设置
-     */
-    updateSettings(settings: MCPServerSettings) {
-        saveSettings(settings);
-        if (apiServer) {
-            apiServer.stop();
-            apiServer = new APIServer(settings);
-            apiServer.start();
-        } else {
-            apiServer = new APIServer(settings);
-            apiServer.start();
-        }
-    },
-
-    /**
-     * @en Get tools list
-     * @zh 获取工具列表
-     */
-    getToolsList() {
-        return apiServer ? apiServer.getAvailableTools() : [];
-    },
-
-    getFilteredToolsList() {
-        if (!apiServer) return [];
-        
-        // 获取当前启用的工具
-        const enabledTools = toolManager.getEnabledTools();
-        
-        // 更新MCP服务器的启用工具列表
-        apiServer.updateEnabledTools(enabledTools);
-        
-        return apiServer.getFilteredTools(enabledTools);
-    },
-    /**
-     * @en Get server settings
-     * @zh 获取服务器设置
-     */
-    async getServerSettings() {
-        return apiServer ? apiServer.getSettings() : readSettings();
-    },
-
-    /**
-     * @en Get server settings (alternative method)
-     * @zh 获取服务器设置（替代方法）
-     */
-    async getSettings() {
-        return apiServer ? apiServer.getSettings() : readSettings();
-    },
-
-    // 工具管理器相关方法
-    async getToolManagerState() {
-        return toolManager.getToolManagerState();
-    },
-
-    async createToolConfiguration(name: string, description?: string) {
-        try {
-            const config = toolManager.createConfiguration(name, description);
-            return { success: true, id: config.id, config };
-        } catch (error: any) {
-            throw new Error(`创建配置失败: ${error.message}`);
-        }
-    },
-
-    async updateToolConfiguration(configId: string, updates: any) {
-        try {
-            return toolManager.updateConfiguration(configId, updates);
-        } catch (error: any) {
-            throw new Error(`更新配置失败: ${error.message}`);
-        }
-    },
-
-    async deleteToolConfiguration(configId: string) {
-        try {
-            toolManager.deleteConfiguration(configId);
-            return { success: true };
-        } catch (error: any) {
-            throw new Error(`删除配置失败: ${error.message}`);
-        }
-    },
-
-    async setCurrentToolConfiguration(configId: string) {
-        try {
-            toolManager.setCurrentConfiguration(configId);
-            return { success: true };
-        } catch (error: any) {
-            throw new Error(`设置当前配置失败: ${error.message}`);
-        }
-    },
-
-    async updateToolStatus(category: string, toolName: string, enabled: boolean) {
-        try {
-            const currentConfig = toolManager.getCurrentConfiguration();
-            if (!currentConfig) {
-                throw new Error('没有当前配置');
-            }
-            
-            toolManager.updateToolStatus(currentConfig.id, category, toolName, enabled);
-            
-            // 更新MCP服务器的工具列表
-            if (apiServer) {
-                const enabledTools = toolManager.getEnabledTools();
-                apiServer.updateEnabledTools(enabledTools);
-            }
-            
-            return { success: true };
-        } catch (error: any) {
-            throw new Error(`更新工具状态失败: ${error.message}`);
-        }
-    },
-
-    async updateToolStatusBatch(updates: any[]) {
-        try {
-            console.log(`[Main] updateToolStatusBatch called with updates count:`, updates ? updates.length : 0);
-            
-            const currentConfig = toolManager.getCurrentConfiguration();
-            if (!currentConfig) {
-                throw new Error('没有当前配置');
-            }
-            
-            toolManager.updateToolStatusBatch(currentConfig.id, updates);
-            
-            // 更新MCP服务器的工具列表
-            if (apiServer) {
-                const enabledTools = toolManager.getEnabledTools();
-                apiServer.updateEnabledTools(enabledTools);
-            }
-            
-            return { success: true };
-        } catch (error: any) {
-            throw new Error(`批量更新工具状态失败: ${error.message}`);
-        }
-    },
-
-    async exportToolConfiguration(configId: string) {
-        try {
-            return { configJson: toolManager.exportConfiguration(configId) };
-        } catch (error: any) {
-            throw new Error(`导出配置失败: ${error.message}`);
-        }
-    },
-
-    async importToolConfiguration(configJson: string) {
-        try {
-            return toolManager.importConfiguration(configJson);
-        } catch (error: any) {
-            throw new Error(`导入配置失败: ${error.message}`);
-        }
-    },
-
-    async getEnabledTools() {
-        return toolManager.getEnabledTools();
+        await fs.writeJson(instancesFile, instances, { spaces: 2 });
+        console.log(`[Cocos CLI] Registered instance on port ${port} for project: ${projectPath}`);
+    } catch (err) {
+        console.error('[Cocos CLI] Failed to register instance:', err);
     }
-};
+}
+
+async function unregisterInstance(port: number) {
+    try {
+        const instancesFile = getInstancesFile();
+        if (await fs.pathExists(instancesFile)) {
+            const instances = await fs.readJson(instancesFile);
+            if (instances[port.toString()]) {
+                delete instances[port.toString()];
+                await fs.writeJson(instancesFile, instances, { spaces: 2 });
+            }
+        }
+
+        const statusFile = getStatusFile(port);
+        if (await fs.pathExists(statusFile)) {
+            await fs.remove(statusFile);
+        }
+    } catch (err) {
+        console.error('[Cocos CLI] Failed to unregister instance:', err);
+    }
+}
+
+async function writeHeartbeat() {
+    try {
+        const statusFile = getStatusFile(currentPort);
+        await fs.writeJson(statusFile, {
+            status: 'ready',
+            lastUpdated: Date.now()
+        });
+    } catch (err) {
+        // Ignore heartbeat write errors to prevent console spam
+    }
+}
 
 /**
  * @en Method Triggered on Extension Startup
  * @zh 扩展启动时触发的方法
  */
-export function load() {
-    console.log('Cocos Creator Connector extension loaded');
+export async function load() {
+    console.log('[Cocos CLI] Headless extension loaded');
     
-    // 初始化工具管理器
-    toolManager = new ToolManager();
-    
-    // 读取设置
-    const settings = readSettings();
-    apiServer = new APIServer(settings);
-    
-    // 初始化MCP服务器的工具列表
-    const enabledTools = toolManager.getEnabledTools();
-    apiServer.updateEnabledTools(enabledTools);
-    
-    // 如果设置了自动启动，则启动服务器
-    if (settings.autoStart) {
-        apiServer.start().catch(err => {
-            console.error('Failed to auto-start API server:', err);
-        });
+    try {
+        toolManager = new ToolManager();
+        
+        const settings = readSettings();
+        currentPort = settings.port || 8585;
+        
+        apiServer = new APIServer(settings);
+        
+        const enabledTools = toolManager.getEnabledTools();
+        apiServer.updateEnabledTools(enabledTools);
+        
+        // Auto-start server immediately (headless mode)
+        await apiServer.start();
+        console.log(`[Cocos CLI] API Server started dynamically on port ${currentPort}`);
+
+        await registerInstance(currentPort);
+        
+        // Write initial heartbeat and start interval
+        await writeHeartbeat();
+        heartbeatInterval = setInterval(writeHeartbeat, 500);
+
+    } catch (err) {
+        console.error('[Cocos CLI] Failed to startup headless server:', err);
     }
 }
 
@@ -247,9 +126,17 @@ export function load() {
  * @en Method triggered when uninstalling the extension
  * @zh 卸载扩展时触发的方法
  */
-export function unload() {
+export async function unload() {
+    if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+    }
+
     if (apiServer) {
         apiServer.stop();
         apiServer = null;
     }
+
+    await unregisterInstance(currentPort);
+    console.log('[Cocos CLI] Headless extension unloaded');
 }
