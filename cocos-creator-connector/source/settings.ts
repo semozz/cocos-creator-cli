@@ -56,7 +56,7 @@ export function saveSettings(settings: MCPServerSettings): void {
     }
 }
 
-// 工具管理器设置相关函数
+// 도구 관리자 설정 관련 함수
 export function readToolManagerSettings(): ToolManagerSettings {
     try {
         ensureSettingsDir();
@@ -89,7 +89,7 @@ export function exportToolConfiguration(config: ToolConfiguration): string {
 export function importToolConfiguration(configJson: string): ToolConfiguration {
     try {
         const config = JSON.parse(configJson);
-        // 验证配置格式
+        // 설정 형식 검증
         if (!config.id || !config.name || !Array.isArray(config.tools)) {
             throw new Error('Invalid configuration format');
         }

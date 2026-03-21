@@ -311,7 +311,7 @@ export class NodeTools implements ToolExecutor {
             try {
                 let targetParentUuid = args.parentUuid;
                 
-                // 如果没有提供父节点UUID，获取场景根节点
+                // 부모 노드 UUID가 없으면 씬 루트 노드 획득
                 if (!targetParentUuid) {
                     try {
                         const sceneInfo = await Editor.Message.request('scene', 'query-node-tree');
@@ -332,7 +332,7 @@ export class NodeTools implements ToolExecutor {
                     }
                 }
 
-                // 如果提供了assetPath，先解析为assetUuid
+                // assetPath가 제공되면 먼저 assetUuid로 해석
                 let finalAssetUuid = args.assetUuid;
                 if (args.assetPath && !finalAssetUuid) {
                     try {
@@ -356,17 +356,17 @@ export class NodeTools implements ToolExecutor {
                     }
                 }
 
-                // 构建create-node选项
+                // create-node 옵션 구성
                 const createNodeOptions: any = {
                     name: args.name
                 };
 
-                // 设置父节点
+                // 부모 노드 설정
                 if (targetParentUuid) {
                     createNodeOptions.parent = targetParentUuid;
                 }
 
-                // 从资源实例化
+                // 리소스에서 인스턴스화
                 if (finalAssetUuid) {
                     createNodeOptions.assetUuid = finalAssetUuid;
                     if (args.unlinkPrefab) {
@@ -374,31 +374,31 @@ export class NodeTools implements ToolExecutor {
                     }
                 }
 
-                // 添加组件
+                // 컴포넌트 추가
                 if (args.components && args.components.length > 0) {
                     createNodeOptions.components = args.components;
                 } else if (args.nodeType && args.nodeType !== 'Node' && !finalAssetUuid) {
-                    // 只有在不从资源实例化时才添加nodeType组件
+                    // 리소스 인스턴스화가 아닐 때만 nodeType 컴포넌트 추가
                     createNodeOptions.components = [args.nodeType];
                 }
 
-                // 保持世界变换
+                // 월드 변환 유지
                 if (args.keepWorldTransform) {
                     createNodeOptions.keepWorldTransform = true;
                 }
 
-                // 不使用dump参数处理初始变换，创建后使用set_node_transform设置
+                // 초기 변환은 dump 파라미터를 쓰지 않고 생성 후 set_node_transform으로 설정
 
                 console.log('Creating node with options:', createNodeOptions);
 
-                // 创建节点
+                // 노드 생성
                 const nodeUuid = await Editor.Message.request('scene', 'create-node', createNodeOptions);
                 const uuid = Array.isArray(nodeUuid) ? nodeUuid[0] : nodeUuid;
 
-                // 处理兄弟索引
+                // 형제 인덱스 처리
                 if (args.siblingIndex !== undefined && args.siblingIndex >= 0 && uuid && targetParentUuid) {
                     try {
-                        await new Promise(resolve => setTimeout(resolve, 100)); // 等待内部状态更新
+                        await new Promise(resolve => setTimeout(resolve, 100)); // 대기내부
                         await Editor.Message.request('scene', 'set-parent', {
                             parent: targetParentUuid,
                             uuids: [uuid],
@@ -409,10 +409,10 @@ export class NodeTools implements ToolExecutor {
                     }
                 }
 
-                // 添加组件（如果提供的话）
+                // 컴포넌트 추가(제공된 경우)
                 if (args.components && args.components.length > 0 && uuid) {
                     try {
-                        await new Promise(resolve => setTimeout(resolve, 100)); // 等待节点创建完成
+                        await new Promise(resolve => setTimeout(resolve, 100)); // 대기노드생성완료
                         for (const componentType of args.components) {
                             try {
                                 const result = await this.componentTools.execute('add_component', {
@@ -433,10 +433,10 @@ export class NodeTools implements ToolExecutor {
                     }
                 }
 
-                // 设置初始变换（如果提供的话）
+                // 초기 변환 설정(제공된 경우)
                 if (args.initialTransform && uuid) {
                     try {
-                        await new Promise(resolve => setTimeout(resolve, 150)); // 等待节点和组件创建完成
+                        await new Promise(resolve => setTimeout(resolve, 150)); // 대기노드 컴포넌트생성완료
                         await this.setNodeTransform({
                             uuid: uuid,
                             position: args.initialTransform.position,
@@ -449,7 +449,7 @@ export class NodeTools implements ToolExecutor {
                     }
                 }
 
-                // 获取创建后的节点信息进行验证
+                // 생성 후 노드 정보를 가져와 검증
                 let verificationData: any = null;
                 try {
                     const nodeInfo = await this.getNodeInfo(uuid);
@@ -508,7 +508,7 @@ export class NodeTools implements ToolExecutor {
                     return;
                 }
                 
-                // 根据实际返回的数据结构解析节点信息
+                // 실제 반환 데이터 구조에 따라 노드 정보 파싱
                 const info: NodeInfo = {
                     uuid: nodeData.uuid?.value || uuid,
                     name: nodeData.name?.value || 'Unknown',
@@ -567,7 +567,7 @@ export class NodeTools implements ToolExecutor {
                 
                 resolve({ success: true, data: nodes });
             }).catch((err: Error) => {
-                // 备用方案：使用场景脚本
+                // 대안: 씬 스크립트 사용
                 const options = {
                     name: 'cocos-mcp-server',
                     method: 'findNodes',
@@ -585,7 +585,7 @@ export class NodeTools implements ToolExecutor {
 
     private async findNodeByName(name: string): Promise<ToolResponse> {
         return new Promise((resolve) => {
-            // 优先尝试使用 Editor API 查询节点树并搜索
+            // 우선 Editor API로 노드 트리 조회 및 검색 시도
             Editor.Message.request('scene', 'query-node-tree').then((tree: any) => {
                 const foundNode = this.searchNodeInTree(tree, name);
                 if (foundNode) {
@@ -601,7 +601,7 @@ export class NodeTools implements ToolExecutor {
                     resolve({ success: false, error: `Node '${name}' not found` });
                 }
             }).catch((err: Error) => {
-                // 备用方案：使用场景脚本
+                // 대안: 씬 스크립트 사용
                 const options = {
                     name: 'cocos-mcp-server',
                     method: 'findNodeByName',
@@ -636,7 +636,7 @@ export class NodeTools implements ToolExecutor {
 
     private async getAllNodes(): Promise<ToolResponse> {
         return new Promise((resolve) => {
-            // 尝试查询场景节点树
+            // 씬 노드 트리 조회 시도
             Editor.Message.request('scene', 'query-node-tree').then((tree: any) => {
                 const nodes: any[] = [];
                 
@@ -668,7 +668,7 @@ export class NodeTools implements ToolExecutor {
                     }
                 });
             }).catch((err: Error) => {
-                // 备用方案：使用场景脚本
+                // 대안: 씬 스크립트 사용
                 const options = {
                     name: 'cocos-mcp-server',
                     method: 'getAllNodes',
@@ -696,7 +696,7 @@ export class NodeTools implements ToolExecutor {
 
     private async setNodeProperty(uuid: string, property: string, value: any): Promise<ToolResponse> {
         return new Promise((resolve) => {
-            // 尝试直接使用 Editor API 设置节点属性
+            // Editor API로 노드 속성 직접 설정 시도
             Editor.Message.request('scene', 'set-property', {
                 uuid: uuid,
                 path: property,
@@ -730,7 +730,7 @@ export class NodeTools implements ToolExecutor {
                     });
                 });
             }).catch((err: Error) => {
-                // 如果直接设置失败，尝试使用场景脚本
+                // 직접 설정 실패 시 씬 스크립트 사용 시도
                 const options = {
                     name: 'cocos-mcp-server',
                     method: 'setNodeProperty',

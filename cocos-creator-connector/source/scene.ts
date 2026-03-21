@@ -258,7 +258,7 @@ export const methods: { [key: string]: (...any: any) => any } = {
                 return { success: false, error: `Node with UUID ${nodeUuid} not found` };
             }
 
-            // 设置属性
+            // 속성 설정
             if (property === 'position') {
                 node.setPosition(value.x || 0, value.y || 0, value.z || 0);
             } else if (property === 'rotation') {
@@ -270,7 +270,7 @@ export const methods: { [key: string]: (...any: any) => any } = {
             } else if (property === 'name') {
                 node.name = value;
             } else {
-                // 尝试直接设置属性
+                // 속성 직접 설정 시도
                 (node as any)[property] = value;
             }
 
@@ -339,8 +339,8 @@ export const methods: { [key: string]: (...any: any) => any } = {
                 return { success: false, error: `Node with UUID ${nodeUuid} not found` };
             }
 
-            // 注意：这里只是一个模拟实现，因为运行时环境下无法直接创建预制体文件
-            // 真正的预制体创建需要Editor API支持
+            // 주의: 런타임 환경에서는 프리팹 파일을 직접 만들 수 없어 여기서는 모의 구현만 제공
+            // 실제 프리팹 생성에는 Editor API 지원이 필요
             return {
                 success: true,
                 data: {
@@ -376,22 +376,22 @@ export const methods: { [key: string]: (...any: any) => any } = {
             if (!component) {
                 return { success: false, error: `Component ${componentType} not found on node` };
             }
-            // 针对常见属性做特殊处理
+            // 자주 쓰는 속성에 대한 특별 처리
             if (property === 'spriteFrame' && componentType === 'cc.Sprite') {
-                // 支持 value 为 uuid 或资源路径
+                // value로 uuid 또는 리소스 경로 지원
                 if (typeof value === 'string') {
-                    // 先尝试按 uuid 查找
+                    // 먼저 uuid로 조회 시도
                     const assetManager = require('cc').assetManager;
                     assetManager.resources.load(value, require('cc').SpriteFrame, (err: any, spriteFrame: any) => {
                         if (!err && spriteFrame) {
                             component.spriteFrame = spriteFrame;
                         } else {
-                            // 尝试通过 uuid 加载
+                            // uuid로 로드 시도
                             assetManager.loadAny({ uuid: value }, (err2: any, asset: any) => {
                                 if (!err2 && asset) {
                                     component.spriteFrame = asset;
                                 } else {
-                                    // 直接赋值（兼容已传入资源对象）
+                                    // 직접 할당(이미 전달된 리소스 객체와 호환)
                                     component.spriteFrame = value;
                                 }
                             });
@@ -401,7 +401,7 @@ export const methods: { [key: string]: (...any: any) => any } = {
                     component.spriteFrame = value;
                 }
             } else if (property === 'material' && (componentType === 'cc.Sprite' || componentType === 'cc.MeshRenderer')) {
-                // 支持 value 为 uuid 或资源路径
+                // value로 uuid 또는 리소스 경로 지원
                 if (typeof value === 'string') {
                     const assetManager = require('cc').assetManager;
                     assetManager.resources.load(value, require('cc').Material, (err: any, material: any) => {
@@ -425,7 +425,7 @@ export const methods: { [key: string]: (...any: any) => any } = {
             } else {
                 component[property] = value;
             }
-            // 可选：刷新 Inspector
+            // 선택 사항: Inspector 새로고침
             // Editor.Message.send('scene', 'snapshot');
             return { success: true, message: `Component property '${property}' updated successfully` };
         } catch (error: any) {

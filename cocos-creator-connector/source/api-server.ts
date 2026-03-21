@@ -23,7 +23,7 @@ export class APIServer {
     private clients: Map<string, MCPClient> = new Map();
     private tools: Record<string, any> = {};
     private toolsList: ToolDefinition[] = [];
-    private enabledTools: any[] = []; // 存储启用的工具列表
+    private enabledTools: any[] = []; // 도구목록
 
     constructor(settings: MCPServerSettings) {
         this.settings = settings;
@@ -91,7 +91,7 @@ export class APIServer {
     private setupTools(): void {
         this.toolsList = [];
         
-        // 如果没有启用工具配置，返回所有工具
+        // 활성 도구 설정이 없으면 모든 도구 반환
         if (!this.enabledTools || this.enabledTools.length === 0) {
             for (const [category, toolSet] of Object.entries(this.tools)) {
                 const tools = toolSet.getTools();
@@ -104,7 +104,7 @@ export class APIServer {
                 }
             }
         } else {
-            // 根据启用的工具配置过滤
+            // 활성화된 도구 설정 기준으로 필터링
             const enabledToolNames = new Set(this.enabledTools.map(tool => `${tool.category}_${tool.name}`));
             
             for (const [category, toolSet] of Object.entries(this.tools)) {
@@ -127,7 +127,7 @@ export class APIServer {
 
     public getFilteredTools(enabledTools: any[]): ToolDefinition[] {
         if (!enabledTools || enabledTools.length === 0) {
-            return this.toolsList; // 如果没有过滤配置，返回所有工具
+            return this.toolsList; // 만약없으면 설정, 도구
         }
 
         const enabledToolNames = new Set(enabledTools.map(tool => `${tool.category}_${tool.name}`));
@@ -156,7 +156,7 @@ export class APIServer {
     public updateEnabledTools(enabledTools: any[]): void {
         console.log(`[MCPServer] Updating enabled tools: ${enabledTools.length} tools`);
         this.enabledTools = enabledTools;
-        this.setupTools(); // 重新设置工具列表
+        this.setupTools(); // 설정도구목록
     }
 
     public getSettings(): MCPServerSettings {

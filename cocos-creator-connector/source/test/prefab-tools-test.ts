@@ -1,6 +1,6 @@
 import { PrefabTools } from '../tools/prefab-tools';
 
-// 预制体工具测试
+// 프리팹 도구 테스트
 export class PrefabToolsTest {
     private prefabTools: PrefabTools;
 
@@ -12,19 +12,19 @@ export class PrefabToolsTest {
         console.log('开始预制体工具测试...');
         
         try {
-            // 测试1: 获取工具列表
+            // 테스트1: 도구 목록 가져오기
             await this.testGetTools();
             
-            // 测试2: 获取预制体列表
+            // 테스트2: 프리팹 목록 가져오기
             await this.testGetPrefabList();
             
-            // 测试3: 测试预制体创建（模拟）
+            // 테스트3: 프리팹 생성 테스트(모의)
             await this.testCreatePrefab();
             
-            // 测试3.5: 测试预制体实例化（模拟）
+            // 테스트3.5: 프리팹 인스턴스화 테스트(모의)
             await this.testInstantiatePrefab();
             
-            // 测试4: 测试预制体验证
+            // 테스트4: 프리팹 검증 테스트
             await this.testValidatePrefab();
             
             console.log('所有测试完成！');
@@ -66,7 +66,7 @@ export class PrefabToolsTest {
     private async testCreatePrefab() {
         console.log('测试3: 测试预制体创建（模拟）');
         try {
-            // 模拟创建预制体
+            // 프리팹 모의 생성
             const mockArgs = {
                 nodeUuid: 'mock-node-uuid',
                 savePath: 'db://assets/test',
@@ -84,7 +84,7 @@ export class PrefabToolsTest {
     private async testInstantiatePrefab() {
         console.log('测试3.5: 测试预制体实例化（模拟）');
         try {
-            // 模拟实例化预制体
+            // 프리팹 모의 인스턴스화
             const mockArgs = {
                 prefabPath: 'db://assets/prefabs/TestPrefab.prefab',
                 parentUuid: 'canvas-uuid',
@@ -94,7 +94,7 @@ export class PrefabToolsTest {
             const result = await this.prefabTools.execute('instantiate_prefab', mockArgs);
             console.log('实例化预制体结果:', result);
             
-            // 测试API参数构建
+            // API 파라미터 구성 테스트
             this.testCreateNodeAPIParams();
         } catch (error) {
             console.log('实例化预制体时发生错误:', error);
@@ -105,24 +105,24 @@ export class PrefabToolsTest {
     private testCreateNodeAPIParams() {
         console.log('测试 create-node API 参数构建...');
         
-        // 模拟 assetUuid
+        // assetUuid 모의 설정
         const assetUuid = 'mock-prefab-uuid';
         
-        // 测试基本参数
+        // 기본 파라미터 테스트
         const basicOptions = {
             assetUuid: assetUuid,
             name: 'TestPrefabInstance'
         };
         console.log('基本参数:', basicOptions);
         
-        // 测试带父节点的参数
+        // 부모 노드 포함 파라미터 테스트
         const withParentOptions = {
             ...basicOptions,
             parent: 'parent-node-uuid'
         };
         console.log('带父节点参数:', withParentOptions);
         
-        // 测试带位置的参数
+        // 위치 포함 파라미터 테스트
         const withPositionOptions = {
             ...basicOptions,
             dump: {
@@ -131,7 +131,7 @@ export class PrefabToolsTest {
         };
         console.log('带位置参数:', withPositionOptions);
         
-        // 测试完整参数
+        // 전체 파라미터 테스트
         const fullOptions = {
             assetUuid: assetUuid,
             name: 'TestPrefabInstance',
@@ -148,7 +148,7 @@ export class PrefabToolsTest {
     private async testValidatePrefab() {
         console.log('测试4: 测试预制体验证');
         try {
-            // 测试验证一个不存在的预制体
+            // 존재하지 않는 프리팹 검증 테스트
             const result = await this.prefabTools.execute('validate_prefab', { 
                 prefabPath: 'db://assets/nonexistent.prefab' 
             });
@@ -159,7 +159,7 @@ export class PrefabToolsTest {
         console.log('测试4完成\n');
     }
 
-    // 测试预制体数据结构生成
+    // 프리팹 데이터 구조 생성 테스트
     testPrefabDataGeneration() {
         console.log('测试预制体数据结构生成...');
         
@@ -187,14 +187,14 @@ export class PrefabToolsTest {
         console.log('生成的预制体数据结构:');
         console.log(JSON.stringify(prefabData, null, 2));
         
-        // 验证数据结构
+        // 데이터 구조 검증
         const validationResult = this.prefabTools['validatePrefabFormat'](prefabData);
         console.log('验证结果:', validationResult);
         
         console.log('预制体数据结构生成测试完成\n');
     }
 
-    // 测试UUID生成
+    // UUID 생성 테스트
     testUUIDGeneration() {
         console.log('测试UUID生成...');
         
@@ -205,7 +205,7 @@ export class PrefabToolsTest {
             console.log(`UUID ${i + 1}: ${uuid}`);
         }
         
-        // 检查UUID格式
+        // UUID 형식 확인
         const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         const validUuids = uuids.filter(uuid => uuidPattern.test(uuid));
         
@@ -214,7 +214,7 @@ export class PrefabToolsTest {
     }
 }
 
-// 如果直接运行此文件
+// 이 파일을 직접 실행하는 경우
 if (typeof module !== 'undefined' && module.exports) {
     const test = new PrefabToolsTest();
     test.runAllTests();

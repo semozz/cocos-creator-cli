@@ -93,7 +93,7 @@ export class BroadcastTools implements ToolExecutor {
     }
 
     private setupBroadcastListeners(): void {
-        // 设置预定义的重要广播消息监听
+        // 사전 정의된 중요 브로드캐스트 메시지 리스너 설정
         const importantMessages = [
             'build-worker:ready',
             'build-worker:closed',
@@ -121,7 +121,7 @@ export class BroadcastTools implements ToolExecutor {
                 timestamp: Date.now()
             });
 
-            // 保持日志大小在合理范围内
+            // 주석 번역 완료
             if (this.messageLog.length > 1000) {
                 this.messageLog = this.messageLog.slice(-500);
             }
@@ -134,7 +134,7 @@ export class BroadcastTools implements ToolExecutor {
         }
         this.listeners.get(messageType)!.push(listener);
 
-        // 注册 Editor 消息监听 - 暂时注释掉，Editor.Message API可能不支持
+        // Editor 메시지 리스너 등록 - 임시 주석 처리(Editor.Message API 미지원 가능)
         // Editor.Message.on(messageType, listener);
         console.log(`[BroadcastTools] Added listener for ${messageType} (simulated)`);
     }

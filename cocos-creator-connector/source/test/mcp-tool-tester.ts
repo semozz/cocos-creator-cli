@@ -1,7 +1,7 @@
 declare const Editor: any;
 
 /**
- * MCP 工具测试器 - 直接测试通过 WebSocket 的 MCP 工具
+ * MCP 도구 테스터 - WebSocket으로 MCP 도구를 직접 테스트
  */
 export class MCPToolTester {
     private ws: WebSocket | null = null;
@@ -112,12 +112,12 @@ export class MCPToolTester {
         console.log('\n=== 测试 MCP 工具（通过 WebSocket）===');
         
         try {
-            // 0. 获取工具列表
+            // 0. 도구 목록 가져오기
             console.log('\n0. 获取工具列表...');
             const toolsList = await this.listTools();
             console.log(`找到 ${toolsList.tools?.length || 0} 个工具:`);
             if (toolsList.tools) {
-                for (const tool of toolsList.tools.slice(0, 10)) { // 只显示前10个
+                for (const tool of toolsList.tools.slice(0, 10)) { // 10
                     console.log(`  - ${tool.name}: ${tool.description}`);
                 }
                 if (toolsList.tools.length > 10) {
@@ -125,17 +125,17 @@ export class MCPToolTester {
                 }
             }
             
-            // 1. 测试场景工具
+            // 1. 씬 도구 테스트
             console.log('\n1. 测试当前场景信息...');
             const sceneInfo = await this.callTool('scene_get_current_scene');
             console.log('场景信息:', JSON.stringify(sceneInfo).substring(0, 100) + '...');
             
-            // 2. 测试场景列表
+            // 2. 씬 목록 테스트
             console.log('\n2. 测试场景列表...');
             const sceneList = await this.callTool('scene_get_scene_list');
             console.log('场景列表:', JSON.stringify(sceneList).substring(0, 100) + '...');
             
-            // 3. 测试节点创建
+            // 3. 노드 생성 테스트
             console.log('\n3. 测试创建节点...');
             const createResult = await this.callTool('node_create_node', {
                 name: 'MCPTestNode_' + Date.now(),
@@ -144,7 +144,7 @@ export class MCPToolTester {
             });
             console.log('创建节点结果:', createResult);
             
-            // 解析创建节点的结果
+            // 노드 생성 결과 파싱
             let nodeUuid: string | null = null;
             if (createResult.content && createResult.content[0] && createResult.content[0].text) {
                 try {
@@ -158,14 +158,14 @@ export class MCPToolTester {
             }
             
             if (nodeUuid) {
-                // 4. 测试查询节点
+                // 4. 노드 조회 테스트
                 console.log('\n4. 测试查询节点...');
                 const queryResult = await this.callTool('node_get_node_info', {
                     uuid: nodeUuid
                 });
                 console.log('节点信息:', JSON.stringify(queryResult).substring(0, 100) + '...');
                 
-                // 5. 测试删除节点
+                // 5. 노드 삭제 테스트
                 console.log('\n5. 测试删除节点...');
                 const removeResult = await this.callTool('node_delete_node', {
                     uuid: nodeUuid
@@ -174,7 +174,7 @@ export class MCPToolTester {
             } else {
                 console.log('无法从创建结果获取节点UUID，尝试通过名称查找...');
                 
-                // 备用方案：通过名称查找刚创建的节点
+                // 대안: 이름으로 방금 생성한 노드 검색
                 const findResult = await this.callTool('node_find_node_by_name', {
                     name: 'MCPTestNode_' + Date.now()
                 });
@@ -195,24 +195,24 @@ export class MCPToolTester {
                 }
             }
             
-            // 6. 测试项目工具
+            // 6. 프로젝트 도구 테스트
             console.log('\n6. 测试项目信息...');
             const projectInfo = await this.callTool('project_get_project_info');
             console.log('项目信息:', JSON.stringify(projectInfo).substring(0, 100) + '...');
             
-            // 7. 测试预制体工具
+            // 7. 프리팹 도구 테스트
             console.log('\n7. 测试预制体列表...');
             const prefabResult = await this.callTool('prefab_get_prefab_list', {
                 folder: 'db://assets'
             });
             console.log('找到预制体:', prefabResult.data?.length || 0);
             
-            // 8. 测试组件工具
+            // 8. 컴포넌트 도구 테스트
             console.log('\n8. 测试可用组件...');
             const componentsResult = await this.callTool('component_get_available_components');
             console.log('可用组件:', JSON.stringify(componentsResult).substring(0, 100) + '...');
             
-            // 9. 测试调试工具
+            // 9. 디버그 도구 테스트
             console.log('\n9. 测试编辑器信息...');
             const editorInfo = await this.callTool('debug_get_editor_info');
             console.log('编辑器信息:', JSON.stringify(editorInfo).substring(0, 100) + '...');
@@ -231,5 +231,5 @@ export class MCPToolTester {
     }
 }
 
-// 导出到全局方便测试
+// 테스트 편의를 위해 전역으로 내보내기
 (global as any).MCPToolTester = MCPToolTester;

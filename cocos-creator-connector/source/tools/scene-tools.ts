@@ -123,7 +123,7 @@ export class SceneTools implements ToolExecutor {
 
     private async getCurrentScene(): Promise<ToolResponse> {
         return new Promise((resolve) => {
-            // 直接使用 query-node-tree 来获取场景信息（这个方法已经验证可用）
+            // query-node-tree로 씬 정보를 직접 가져오기(검증 완료된 방법)
             Editor.Message.request('scene', 'query-node-tree').then((tree: any) => {
                 if (tree && tree.uuid) {
                     resolve({
@@ -140,7 +140,7 @@ export class SceneTools implements ToolExecutor {
                     resolve({ success: false, error: 'No scene data available' });
                 }
             }).catch((err: Error) => {
-                // 备用方案：使用场景脚本
+                // 대안: 씬 스크립트 사용
                 const options = {
                     name: 'cocos-mcp-server',
                     method: 'getCurrentSceneInfo',
@@ -176,13 +176,13 @@ export class SceneTools implements ToolExecutor {
 
     private async openScene(scenePath: string): Promise<ToolResponse> {
         return new Promise((resolve) => {
-            // 首先获取场景的UUID
+            // 먼저가져오기씬 UUID
             Editor.Message.request('asset-db', 'query-uuid', scenePath).then((uuid: string | null) => {
                 if (!uuid) {
                     throw new Error('Scene not found');
                 }
                 
-                // 使用正确的 scene API 打开场景 (需要UUID)
+                // scene API 씬 ( UUID)
                 return Editor.Message.request('scene', 'open-scene', uuid);
             }).then(() => {
                 resolve({ success: true, message: `Scene opened: ${scenePath}` });
@@ -204,10 +204,10 @@ export class SceneTools implements ToolExecutor {
 
     private async createScene(sceneName: string, savePath: string): Promise<ToolResponse> {
         return new Promise((resolve) => {
-            // 确保路径以.scene结尾
+            // 경로가 .scene으로 끝나도록 보장
             const fullPath = savePath.endsWith('.scene') ? savePath : `${savePath}/${sceneName}.scene`;
             
-            // 使用正确的Cocos Creator 3.8场景格式
+            // Cocos Creator 3.8씬형식
             const sceneContent = JSON.stringify([
                 {
                     "__type__": "cc.SceneAsset",
@@ -397,7 +397,7 @@ export class SceneTools implements ToolExecutor {
 
     private async getSceneHierarchy(includeComponents: boolean = false): Promise<ToolResponse> {
         return new Promise((resolve) => {
-            // 优先尝试使用 Editor API 查询场景节点树
+            // 우선시도 Editor API 조회씬노드
             Editor.Message.request('scene', 'query-node-tree').then((tree: any) => {
                 if (tree) {
                     const hierarchy = this.buildHierarchy(tree, includeComponents);
@@ -409,7 +409,7 @@ export class SceneTools implements ToolExecutor {
                     resolve({ success: false, error: 'No scene hierarchy available' });
                 }
             }).catch((err: Error) => {
-                // 备用方案：使用场景脚本
+                // 대안: 씬 스크립트 사용
                 const options = {
                     name: 'cocos-mcp-server',
                     method: 'getSceneHierarchy',
@@ -452,7 +452,7 @@ export class SceneTools implements ToolExecutor {
 
     private async saveSceneAs(path: string): Promise<ToolResponse> {
         return new Promise((resolve) => {
-            // save-as-scene API 不接受路径参数，会弹出对话框让用户选择
+            // save-as-scene API는 경로 파라미터를 받지 않으며 사용자 선택 대화상자를 띄움
             (Editor.Message.request as any)('scene', 'save-as-scene').then(() => {
                 resolve({
                     success: true,

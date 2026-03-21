@@ -91,7 +91,7 @@ async function writeHeartbeat() {
 
 /**
  * @en Method Triggered on Extension Startup
- * @zh 扩展启动时触发的方法
+ * @zh 확장 시작 시 호출되는 메서드
  */
 export async function load() {
     console.log('[Cocos CLI] Headless extension loaded');
@@ -124,7 +124,7 @@ export async function load() {
 
 /**
  * @en Method triggered when uninstalling the extension
- * @zh 卸载扩展时触发的方法
+ * @zh 확장 제거 시 호출되는 메서드
  */
 export async function unload() {
     if (heartbeatInterval) {
