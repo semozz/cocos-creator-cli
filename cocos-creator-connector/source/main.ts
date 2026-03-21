@@ -30,7 +30,7 @@ async function registerInstance(port: number) {
 
         const instancesFile = getInstancesFile();
         let instances: Record<string, any> = {};
-        
+
         if (await fs.pathExists(instancesFile)) {
             try {
                 instances = await fs.readJson(instancesFile);
@@ -40,7 +40,7 @@ async function registerInstance(port: number) {
         }
 
         const projectPath = Editor.Project.path || process.cwd();
-        
+
         // Add or update this instance
         instances[port.toString()] = {
             port,
@@ -91,28 +91,28 @@ async function writeHeartbeat() {
 
 /**
  * @en Method Triggered on Extension Startup
- * @zh 확장 시작 시 호출되는 메서드
+ * @kr 확장 시작 시 호출되는 메서드
  */
 export async function load() {
     console.log('[Cocos CLI] Headless extension loaded');
-    
+
     try {
         toolManager = new ToolManager();
-        
+
         const settings = readSettings();
         currentPort = settings.port || 8585;
-        
+
         apiServer = new APIServer(settings);
-        
+
         const enabledTools = toolManager.getEnabledTools();
         apiServer.updateEnabledTools(enabledTools);
-        
+
         // Auto-start server immediately (headless mode)
         await apiServer.start();
         console.log(`[Cocos CLI] API Server started dynamically on port ${currentPort}`);
 
         await registerInstance(currentPort);
-        
+
         // Write initial heartbeat and start interval
         await writeHeartbeat();
         heartbeatInterval = setInterval(writeHeartbeat, 500);
@@ -124,7 +124,7 @@ export async function load() {
 
 /**
  * @en Method triggered when uninstalling the extension
- * @zh 확장 제거 시 호출되는 메서드
+ * @kr 확장 제거 시 호출되는 메서드
  */
 export async function unload() {
     if (heartbeatInterval) {
