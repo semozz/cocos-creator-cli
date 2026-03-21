@@ -42,6 +42,9 @@ cocos-creator-cli status
 
 # List all available commands dynamically retrieved from Cocos Creator
 cocos-creator-cli list
+
+# Unity-style one-liner script execution
+cocos-creator-cli exec "Editor.Project.name"
 ```
 
 ### Example Commands:
@@ -54,7 +57,7 @@ cocos-creator-cli scene get_current_scene
 cocos-creator-cli node create_node --params '{"name": "My CLI Node"}'
 
 # Execute arbitrary script logic
-cocos-creator-cli debug execute_script --params '{"code": "console.log(\"Hello from CLI!\"); return true;"}'
+cocos-creator-cli debug execute_script --params '{"script": "console.log(\"Hello from CLI!\"); return true;"}'
 
 # Build the project
 cocos-creator-cli project build_project

@@ -140,6 +140,29 @@ async function main() {
             });
         });
 
+    program
+        .command('exec <script>')
+        .description('Execute JavaScript in Cocos Creator editor context (alias of debug execute_script)')
+        .action(async (script: string) => {
+            try {
+                const res = await fetch(`${apiUrl}/debug/execute_script`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ script })
+                });
+
+                const result = await res.json();
+                console.log(JSON.stringify(result, null, 2));
+
+                if (!res.ok) {
+                    process.exit(1);
+                }
+            } catch (e: any) {
+                console.error(`Execution failed: ${e.message}`);
+                process.exit(1);
+            }
+        });
+
     const tools = await fetchTools(apiUrl);
     
     // Group tools by category
