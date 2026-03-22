@@ -323,12 +323,23 @@ export class ComponentTools implements ToolExecutor {
             // 우선 Editor API로 노드 정보 직접 조회 시도
             Editor.Message.request('scene', 'query-node', nodeUuid).then((nodeData: any) => {
                 if (nodeData && nodeData.__comps__) {
-                    const components = nodeData.__comps__.map((comp: any) => ({
-                        type: comp.__type__ || comp.cid || comp.type || 'Unknown',
-                        uuid: comp.uuid?.value || comp.uuid || null,
-                        enabled: comp.enabled !== undefined ? comp.enabled : true,
-                        properties: this.extractComponentProperties(comp)
-                    }));
+                    const components = nodeData.__comps__.map((comp: any) => {
+                        const rawType = comp.__type__ || comp.type || 'Unknown';
+                        const cid = comp.cid || null;
+                        const scriptAssetUuid = this.extractScriptAssetUuid(comp);
+                        const resolvedType = this.resolveComponentTypeForSerialization(rawType, cid, scriptAssetUuid);
+
+                        return {
+                            // For custom script components, prefer cid or script-asset UUID-derived type.
+                            type: resolvedType,
+                            className: rawType,
+                            cid: cid,
+                            scriptAssetUuid: scriptAssetUuid,
+                            uuid: comp.uuid?.value || comp.uuid || null,
+                            enabled: comp.enabled !== undefined ? comp.enabled : true,
+                            properties: this.extractComponentProperties(comp)
+                        };
+                    });
                     
                     resolve({
                         success: true,
@@ -362,6 +373,44 @@ export class ComponentTools implements ToolExecutor {
                 });
             });
         });
+    }
+
+    private extractScriptAssetUuid(comp: any): string | null {
+        const scriptAsset = comp?.__scriptAsset;
+        const uuidCandidate = scriptAsset?.value?.uuid ?? scriptAsset?.uuid ?? scriptAsset;
+        return (typeof uuidCandidate === 'string' && uuidCandidate.length > 0) ? uuidCandidate : null;
+    }
+
+    private resolveComponentTypeForSerialization(rawType: string, cid: string | null, scriptAssetUuid: string | null): string {
+        if (typeof rawType === 'string' && rawType.startsWith('cc.')) {
+            return rawType;
+        }
+        if (cid) {
+            return cid;
+        }
+        if (scriptAssetUuid) {
+            return this.uuidToCompressedIdSafe(scriptAssetUuid);
+        }
+        return rawType || 'Unknown';
+    }
+
+    private uuidToCompressedIdSafe(uuid: string): string {
+        const normalized = uuid.toLowerCase();
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(normalized)) {
+            return uuid;
+        }
+
+        const BASE64_KEYS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+        const cleanUuid = normalized.replace(/-/g, '');
+        let result = cleanUuid.substring(0, 5);
+        const remainder = cleanUuid.substring(5);
+
+        for (let i = 0; i < remainder.length; i += 3) {
+            const value = parseInt(remainder.substring(i, i + 3).padEnd(3, '0'), 16);
+            result += BASE64_KEYS[(value >> 6) & 63] + BASE64_KEYS[value & 63];
+        }
+
+        return result;
     }
 
     private async getComponentInfo(nodeUuid: string, componentType: string): Promise<ToolResponse> {

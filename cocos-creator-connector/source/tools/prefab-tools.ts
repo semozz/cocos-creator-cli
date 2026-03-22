@@ -978,34 +978,32 @@ export class PrefabTools implements ToolExecutor {
         }
 
         try {
-            // MCP인터페이스가져오기노드 컴포넌트
-            const response = await fetch('http://localhost:8585/mcp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    "jsonrpc": "2.0",
-                    "method": "tools/call",
-                    "params": {
-                        "name": "component_get_components",
-                        "arguments": {
-                            "nodeUuid": node.uuid
-                        }
-                    },
-                    "id": Date.now()
-                })
-            });
-            
-            const mcpResult = await response.json();
-            if (mcpResult.result?.content?.[0]?.text) {
-                const componentData = JSON.parse(mcpResult.result.content[0].text);
-                if (componentData.success && componentData.data.components) {
-                    // 노드 컴포넌트 MCP 데이터
-                    node.components = componentData.data.components;
-                    console.log(`节点 ${node.uuid} 获取到 ${componentData.data.components.length} 个组件，包含脚本组件的正确类型`);
-                }
+            // query-node를 직접 사용해 cid/__scriptAsset를 포함한 신뢰 가능한 컴포넌트 데이터 획득
+            const nodeData = await Editor.Message.request('scene', 'query-node', node.uuid);
+            if (nodeData?.__comps__ && Array.isArray(nodeData.__comps__)) {
+                node.components = nodeData.__comps__.map((comp: any) => {
+                    const rawType = comp.__type__ || comp.type || 'Unknown';
+                    const cid = comp.cid || null;
+                    const scriptAssetUuid = this.extractScriptAssetUuid(comp);
+
+                    return {
+                        type: this.resolveComponentTypeForPrefab({
+                            type: rawType,
+                            cid: cid,
+                            scriptAssetUuid: scriptAssetUuid
+                        }),
+                        __type__: rawType,
+                        cid: cid,
+                        scriptAssetUuid: scriptAssetUuid,
+                        uuid: comp.uuid?.value || comp.uuid || null,
+                        enabled: comp.enabled !== undefined ? comp.enabled : true,
+                        properties: this.extractComponentPropertiesFromNodeComp(comp)
+                    };
+                });
+                console.log(`节点 ${node.uuid} 获取到 ${node.components.length} 个组件(含cid/scriptAsset)`);
             }
         } catch (error) {
-            console.warn(`获取节点 ${node.uuid} 的MCP组件信息失败:`, error);
+            console.warn(`获取节点 ${node.uuid} 的组件信息失败:`, error);
         }
 
         // 자식 노드 재귀 처리
@@ -1016,6 +1014,27 @@ export class PrefabTools implements ToolExecutor {
         }
 
         return node;
+    }
+
+    private extractScriptAssetUuid(comp: any): string | null {
+        const scriptAsset = comp?.__scriptAsset;
+        const uuidCandidate = scriptAsset?.value?.uuid ?? scriptAsset?.uuid ?? scriptAsset;
+        return (typeof uuidCandidate === 'string' && uuidCandidate.length > 0) ? uuidCandidate : null;
+    }
+
+    private extractComponentPropertiesFromNodeComp(component: any): Record<string, any> {
+        if (component?.value && typeof component.value === 'object') {
+            return component.value;
+        }
+
+        const properties: Record<string, any> = {};
+        const excludeKeys = ['__type__', 'enabled', 'node', '_id', '__scriptAsset', 'uuid', 'name', '_name', '_objFlags', '_enabled', 'type', 'readonly', 'visible', 'cid', 'editor', 'extends'];
+        for (const key in component) {
+            if (!excludeKeys.includes(key) && !key.startsWith('_')) {
+                properties[key] = component[key];
+            }
+        }
+        return properties;
     }
 
     private async buildBasicNodeInfo(nodeUuid: string): Promise<any> {
@@ -1877,7 +1896,7 @@ export class PrefabTools implements ToolExecutor {
         nodeUuidToIndex?: Map<string, number>,
         componentUuidToIndex?: Map<string, number>
     }): any {
-        let componentType = componentData.type || componentData.__type__ || 'cc.Component';
+        let componentType = this.resolveComponentTypeForPrefab(componentData);
         const enabled = componentData.enabled !== undefined ? componentData.enabled : true;
         
         // console.log(`컴포넌트 객체 생성 - 타입: ${componentType}`);
@@ -2010,6 +2029,42 @@ export class PrefabTools implements ToolExecutor {
         component._id = _id;
         
         return component;
+    }
+
+    /**
+     * 프리팹 직렬화에 안전한 컴포넌트 타입을 결정한다.
+     * - 내장 컴포넌트: cc.* 타입 유지
+     * - 커스텀 스크립트: cid 우선 사용
+     * - UUID 형식이면 엔진 압축 UUID로 변환
+     */
+    private resolveComponentTypeForPrefab(componentData: any): string {
+        const byType = typeof componentData?.type === 'string' ? componentData.type : '';
+        const byClassName = typeof componentData?.__type__ === 'string' ? componentData.__type__ : '';
+        const byCid = typeof componentData?.cid === 'string' ? componentData.cid : '';
+        const byScriptAssetUuid = typeof componentData?.scriptAssetUuid === 'string' ? componentData.scriptAssetUuid : '';
+
+        let chosen = byType || byCid || byClassName || byScriptAssetUuid || 'cc.Component';
+
+        // Built-in components always keep cc.* names.
+        if (chosen.startsWith('cc.')) {
+            return chosen;
+        }
+
+        // If class name came in but cid is available, cid is safer for serialized prefab.
+        if (byCid) {
+            chosen = byCid;
+        }
+        // When cid is unavailable, script asset UUID is the next-safe source for custom script types.
+        else if (byScriptAssetUuid) {
+            chosen = byScriptAssetUuid;
+        }
+
+        // Convert full UUID to compressed engine id for __type__.
+        if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(chosen)) {
+            return this.uuidToCompressedId(chosen);
+        }
+
+        return chosen;
     }
 
     /**
