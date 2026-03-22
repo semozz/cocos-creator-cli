@@ -14,12 +14,12 @@ export class MCPToolTester {
                 this.ws = new WebSocket(`ws://localhost:${port}`);
                 
                 this.ws.onopen = () => {
-                    console.log('WebSocket 连接成功');
+                    console.log('WebSocket 연결 성공');
                     resolve(true);
                 };
                 
                 this.ws.onerror = (error) => {
-                    console.error('WebSocket 连接错误:', error);
+                    console.error('WebSocket 연결 오류:', error);
                     resolve(false);
                 };
                 
@@ -32,11 +32,11 @@ export class MCPToolTester {
                             handler?.(response);
                         }
                     } catch (error) {
-                        console.error('处理响应时出错:', error);
+                        console.error('응답 처리 중 오류:', error);
                     }
                 };
             } catch (error) {
-                console.error('创建 WebSocket 时出错:', error);
+                console.error('WebSocket 생성 중 오류:', error);
                 resolve(false);
             }
         });
@@ -44,7 +44,7 @@ export class MCPToolTester {
 
     async callTool(tool: string, args: any = {}): Promise<any> {
         if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-            throw new Error('WebSocket 未连接');
+            throw new Error('WebSocket이 연결되지 않았습니다');
         }
 
         return new Promise((resolve, reject) => {
@@ -61,7 +61,7 @@ export class MCPToolTester {
 
             const timeout = setTimeout(() => {
                 this.responseHandlers.delete(id);
-                reject(new Error('请求超时'));
+                reject(new Error('요청 시간이 초과되었습니다'));
             }, 10000);
 
             this.responseHandlers.set(id, (response) => {
@@ -79,7 +79,7 @@ export class MCPToolTester {
 
     async listTools(): Promise<any> {
         if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-            throw new Error('WebSocket 未连接');
+            throw new Error('WebSocket이 연결되지 않았습니다');
         }
 
         return new Promise((resolve, reject) => {
@@ -92,7 +92,7 @@ export class MCPToolTester {
 
             const timeout = setTimeout(() => {
                 this.responseHandlers.delete(id);
-                reject(new Error('请求超时'));
+                reject(new Error('요청 시간이 초과되었습니다'));
             }, 10000);
 
             this.responseHandlers.set(id, (response) => {
@@ -109,40 +109,40 @@ export class MCPToolTester {
     }
 
     async testMCPTools() {
-        console.log('\n=== 测试 MCP 工具（通过 WebSocket）===');
+        console.log('\n=== MCP 도구 테스트 (WebSocket 경유) ===');
         
         try {
             // 0. 도구 목록 가져오기
-            console.log('\n0. 获取工具列表...');
+            console.log('\n0. 도구 목록 조회...');
             const toolsList = await this.listTools();
-            console.log(`找到 ${toolsList.tools?.length || 0} 个工具:`);
+            console.log(`도구 ${toolsList.tools?.length || 0}개 찾음:`);
             if (toolsList.tools) {
                 for (const tool of toolsList.tools.slice(0, 10)) { // 10
                     console.log(`  - ${tool.name}: ${tool.description}`);
                 }
                 if (toolsList.tools.length > 10) {
-                    console.log(`  ... 还有 ${toolsList.tools.length - 10} 个工具`);
+                    console.log(`  ... 추가로 ${toolsList.tools.length - 10}개 도구가 더 있습니다`);
                 }
             }
             
             // 1. 씬 도구 테스트
-            console.log('\n1. 测试当前场景信息...');
+            console.log('\n1. 현재 씬 정보 테스트...');
             const sceneInfo = await this.callTool('scene_get_current_scene');
-            console.log('场景信息:', JSON.stringify(sceneInfo).substring(0, 100) + '...');
+            console.log('씬 정보:', JSON.stringify(sceneInfo).substring(0, 100) + '...');
             
             // 2. 씬 목록 테스트
-            console.log('\n2. 测试场景列表...');
+            console.log('\n2. 씬 목록 테스트...');
             const sceneList = await this.callTool('scene_get_scene_list');
-            console.log('场景列表:', JSON.stringify(sceneList).substring(0, 100) + '...');
+            console.log('씬 목록:', JSON.stringify(sceneList).substring(0, 100) + '...');
             
             // 3. 노드 생성 테스트
-            console.log('\n3. 测试创建节点...');
+            console.log('\n3. 노드 생성 테스트...');
             const createResult = await this.callTool('node_create_node', {
                 name: 'MCPTestNode_' + Date.now(),
                 nodeType: 'cc.Node',
                 position: { x: 0, y: 0, z: 0 }
             });
-            console.log('创建节点结果:', createResult);
+            console.log('노드 생성 결과:', createResult);
             
             // 노드 생성 결과 파싱
             let nodeUuid: string | null = null;
@@ -151,7 +151,7 @@ export class MCPToolTester {
                     const resultData = JSON.parse(createResult.content[0].text);
                     if (resultData.success && resultData.data && resultData.data.uuid) {
                         nodeUuid = resultData.data.uuid;
-                        console.log('成功获取节点UUID:', nodeUuid);
+                        console.log('노드 UUID 조회 성공:', nodeUuid);
                     }
                 } catch (e) {
                 }
@@ -159,20 +159,20 @@ export class MCPToolTester {
             
             if (nodeUuid) {
                 // 4. 노드 조회 테스트
-                console.log('\n4. 测试查询节点...');
+                console.log('\n4. 노드 조회 테스트...');
                 const queryResult = await this.callTool('node_get_node_info', {
                     uuid: nodeUuid
                 });
-                console.log('节点信息:', JSON.stringify(queryResult).substring(0, 100) + '...');
+                console.log('노드 정보:', JSON.stringify(queryResult).substring(0, 100) + '...');
                 
                 // 5. 노드 삭제 테스트
-                console.log('\n5. 测试删除节点...');
+                console.log('\n5. 노드 삭제 테스트...');
                 const removeResult = await this.callTool('node_delete_node', {
                     uuid: nodeUuid
                 });
-                console.log('删除结果:', removeResult);
+                console.log('삭제 결과:', removeResult);
             } else {
-                console.log('无法从创建结果获取节点UUID，尝试通过名称查找...');
+                console.log('생성 결과에서 노드 UUID를 가져올 수 없어, 이름으로 검색을 시도합니다...');
                 
                 // 대안: 이름으로 방금 생성한 노드 검색
                 const findResult = await this.callTool('node_find_node_by_name', {
@@ -184,41 +184,41 @@ export class MCPToolTester {
                         const findData = JSON.parse(findResult.content[0].text);
                         if (findData.success && findData.data && findData.data.uuid) {
                             nodeUuid = findData.data.uuid;
-                            console.log('通过名称查找成功获取UUID:', nodeUuid);
+                            console.log('이름 검색으로 UUID 조회 성공:', nodeUuid);
                         }
                     } catch (e) {
                     }
                 }
                 
                 if (!nodeUuid) {
-                    console.log('所有方式都无法获取节点UUID，跳过后续节点操作测试');
+                    console.log('모든 방법으로 노드 UUID를 가져오지 못해 이후 노드 작업 테스트를 건너뜁니다');
                 }
             }
             
             // 6. 프로젝트 도구 테스트
-            console.log('\n6. 测试项目信息...');
+            console.log('\n6. 프로젝트 정보 테스트...');
             const projectInfo = await this.callTool('project_get_project_info');
-            console.log('项目信息:', JSON.stringify(projectInfo).substring(0, 100) + '...');
+            console.log('프로젝트 정보:', JSON.stringify(projectInfo).substring(0, 100) + '...');
             
             // 7. 프리팹 도구 테스트
-            console.log('\n7. 测试预制体列表...');
+            console.log('\n7. 프리팹 목록 테스트...');
             const prefabResult = await this.callTool('prefab_get_prefab_list', {
                 folder: 'db://assets'
             });
-            console.log('找到预制体:', prefabResult.data?.length || 0);
+            console.log('찾은 프리팹 수:', prefabResult.data?.length || 0);
             
             // 8. 컴포넌트 도구 테스트
-            console.log('\n8. 测试可用组件...');
+            console.log('\n8. 사용 가능한 컴포넌트 테스트...');
             const componentsResult = await this.callTool('component_get_available_components');
-            console.log('可用组件:', JSON.stringify(componentsResult).substring(0, 100) + '...');
+            console.log('사용 가능한 컴포넌트:', JSON.stringify(componentsResult).substring(0, 100) + '...');
             
             // 9. 디버그 도구 테스트
-            console.log('\n9. 测试编辑器信息...');
+            console.log('\n9. 에디터 정보 테스트...');
             const editorInfo = await this.callTool('debug_get_editor_info');
-            console.log('编辑器信息:', JSON.stringify(editorInfo).substring(0, 100) + '...');
+            console.log('에디터 정보:', JSON.stringify(editorInfo).substring(0, 100) + '...');
             
         } catch (error) {
-            console.error('MCP 工具测试失败:', error);
+            console.error('MCP 도구 테스트 실패:', error);
         }
     }
 

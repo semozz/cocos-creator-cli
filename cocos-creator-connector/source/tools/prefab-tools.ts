@@ -262,7 +262,7 @@ export class PrefabTools implements ToolExecutor {
                 // 가져오기프리팹리소스
                 const assetInfo = await Editor.Message.request('asset-db', 'query-asset-info', args.prefabPath);
                 if (!assetInfo) {
-                    throw new Error('预制体未找到');
+                    throw new Error('프리팹을 찾을 수 없습니다');
                 }
 
                 // create-node API 프리팹리소스
@@ -296,7 +296,7 @@ export class PrefabTools implements ToolExecutor {
                 const uuid = Array.isArray(nodeUuid) ? nodeUuid[0] : nodeUuid;
 
                 // : create-node API 프리팹리소스생성 프리팹
-                console.log('预制体节点创建成功:', {
+                console.log('프리팹 노드 생성 성공:', {
                     nodeUuid: uuid,
                     prefabUuid: assetInfo.uuid,
                     prefabPath: args.prefabPath
@@ -331,19 +331,19 @@ export class PrefabTools implements ToolExecutor {
             // 프리팹 파일을 읽어 루트 노드 fileId 획득
             const prefabContent = await this.readPrefabFile(prefabPath);
             if (!prefabContent || !prefabContent.data || !prefabContent.data.length) {
-                throw new Error('无法读取预制体文件内容');
+                throw new Error('프리팹 파일 내용을 읽을 수 없습니다');
             }
 
             // 프리팹 노드 fileId ( , 1)
             const rootNode = prefabContent.data.find((item: any) => item.__type === 'cc.Node' && item._parent === null);
             if (!rootNode || !rootNode._prefab) {
-                throw new Error('无法找到预制体根节点或其预制体信息');
+                throw new Error('프리팹 루트 노드 또는 프리팹 정보를 찾을 수 없습니다');
             }
 
             // 루트 노드의 PrefabInfo 획득
             const rootPrefabInfo = prefabContent.data[rootNode._prefab.__id__];
             if (!rootPrefabInfo || rootPrefabInfo.__type !== 'cc.PrefabInfo') {
-                throw new Error('无法找到预制体根节点的PrefabInfo');
+                throw new Error('프리팹 루트 노드의 PrefabInfo를 찾을 수 없습니다');
             }
 
             const rootFileId = rootPrefabInfo.fileId;
@@ -369,18 +369,18 @@ export class PrefabTools implements ToolExecutor {
                     connected = true;
                     break;
                 } catch (error) {
-                    console.warn('预制体连接方法失败，尝试下一个方法:', error);
+                    console.warn('프리팹 연결 방식 실패, 다음 방식을 시도합니다:', error);
                 }
             }
 
             if (!connected) {
                 // 만약 API 실패, 시도수동 씬데이터
-                console.warn('所有预制体连接API都失败，尝试手动建立连接');
+                console.warn('모든 프리팹 연결 API가 실패하여 수동 연결을 시도합니다');
                 await this.manuallyEstablishPrefabConnection(nodeUuid, prefabUuid, rootFileId);
             }
 
         } catch (error) {
-            console.error('建立预制体连接失败:', error);
+            console.error('프리팹 연결 설정 실패:', error);
             throw error;
         }
     }
@@ -413,7 +413,7 @@ export class PrefabTools implements ToolExecutor {
             });
 
         } catch (error) {
-            console.error('手动建立预制体连接也失败:', error);
+            console.error('수동 프리팹 연결 설정도 실패했습니다:', error);
             // 오류, 노드생성 성공
         }
     }
@@ -436,7 +436,7 @@ export class PrefabTools implements ToolExecutor {
                     return JSON.parse(fileContent);
                 }
             } catch (error) {
-                console.warn('使用asset-db读取失败，尝试其他方法:', error);
+                console.warn('asset-db 읽기 실패, 다른 방법을 시도합니다:', error);
             }
 
             // : 변환db://경로 경로
@@ -453,7 +453,7 @@ export class PrefabTools implements ToolExecutor {
                 path.resolve('/Users/lizhiyong/NewProject_3/assets', path.basename(fsPath))
             ];
 
-            console.log('尝试读取预制体文件，路径转换:', {
+            console.log('프리팹 파일 읽기 시도, 경로 변환:', {
                 originalPath: prefabPath,
                 fsPath: fsPath,
                 possiblePaths: possiblePaths
@@ -461,27 +461,27 @@ export class PrefabTools implements ToolExecutor {
 
             for (const fullPath of possiblePaths) {
                 try {
-                    console.log(`检查路径: ${fullPath}`);
+                    console.log(`경로 확인: ${fullPath}`);
                     if (fs.existsSync(fullPath)) {
-                        console.log(`找到文件: ${fullPath}`);
+                        console.log(`파일 찾음: ${fullPath}`);
                         const fileContent = fs.readFileSync(fullPath, 'utf8');
                         const parsed = JSON.parse(fileContent);
-                        console.log('文件解析成功，数据结构:', {
+                        console.log('파일 파싱 성공, 데이터 구조:', {
                             hasData: !!parsed.data,
                             dataLength: parsed.data ? parsed.data.length : 0
                         });
                         return parsed;
                     } else {
-                        console.log(`文件不存在: ${fullPath}`);
+                        console.log(`파일이 존재하지 않음: ${fullPath}`);
                     }
                 } catch (readError) {
-                    console.warn(`读取文件失败 ${fullPath}:`, readError);
+                    console.warn(`파일 읽기 실패 ${fullPath}:`, readError);
                 }
             }
 
-            throw new Error('无法找到或读取预制体文件');
+            throw new Error('프리팹 파일을 찾거나 읽을 수 없습니다');
         } catch (error) {
-            console.error('读取预制体文件失败:', error);
+            console.error('프리팹 파일 읽기 실패:', error);
             throw error;
         }
     }
@@ -490,7 +490,7 @@ export class PrefabTools implements ToolExecutor {
         return new Promise((resolve) => {
             Editor.Message.request('asset-db', 'query-asset-info', args.prefabPath).then((assetInfo: any) => {
                 if (!assetInfo) {
-                    throw new Error('预制体未找到');
+                    throw new Error('프리팹을 찾을 수 없습니다');
                 }
 
                 // 2: create-node 프리팹리소스
@@ -673,10 +673,10 @@ export class PrefabTools implements ToolExecutor {
     private async createPrefabWithAssetDB(nodeUuid: string, savePath: string, prefabName: string, includeChildren: boolean, includeComponents: boolean): Promise<ToolResponse> {
         return new Promise(async (resolve) => {
             try {
-                console.log('=== 使用 Asset-DB API 创建预制体 ===');
-                console.log(`节点UUID: ${nodeUuid}`);
-                console.log(`保存路径: ${savePath}`);
-                console.log(`预制体名称: ${prefabName}`);
+                console.log('=== Asset-DB API로 프리팹 생성 ===');
+                console.log(`노드 UUID: ${nodeUuid}`);
+                console.log(`저장 경로: ${savePath}`);
+                console.log(`프리팹 이름: ${prefabName}`);
 
                 // : 가져오기노드데이터（ 속성）
                 const nodeData = await this.getNodeData(nodeUuid);
@@ -688,10 +688,10 @@ export class PrefabTools implements ToolExecutor {
                     return;
                 }
 
-                console.log('获取到节点数据，子节点数量:', nodeData.children ? nodeData.children.length : 0);
+                console.log('노드 데이터 조회 완료, 자식 노드 수:', nodeData.children ? nodeData.children.length : 0);
 
                 // : 생성리소스 가져오기 UUID
-                console.log('创建预制体资源文件...');
+                console.log('프리팹 에셋 파일 생성...');
                 const tempPrefabContent = JSON.stringify([{"__type__": "cc.Prefab", "_name": prefabName}], null, 2);
                 const createResult = await this.createAssetWithAssetDB(savePath, tempPrefabContent);
                 if (!createResult.success) {
@@ -708,27 +708,27 @@ export class PrefabTools implements ToolExecutor {
                     });
                     return;
                 }
-                console.log('引擎分配的UUID:', actualPrefabUuid);
+                console.log('엔진에서 할당한 UUID:', actualPrefabUuid);
 
                 // : UUID 프리팹
                 const prefabContent = await this.createStandardPrefabContent(nodeData, prefabName, actualPrefabUuid, includeChildren, includeComponents);
                 const prefabContentString = JSON.stringify(prefabContent, null, 2);
 
                 // : 프리팹
-                console.log('更新预制体文件内容...');
+                console.log('프리팹 파일 내용 업데이트...');
                 const updateResult = await this.updateAssetWithAssetDB(savePath, prefabContentString);
                 
                 // : 생성 meta （ UUID）
-                console.log('创建预制体meta文件...');
+                console.log('프리팹 meta 파일 생성...');
                 const metaContent = this.createStandardMetaContent(prefabName, actualPrefabUuid);
                 const metaResult = await this.createMetaWithAssetDB(savePath, metaContent);
                 
                 // : 리소스 참조
-                console.log('重新导入预制体资源...');
+                console.log('프리팹 에셋 재임포트...');
                 const reimportResult = await this.reimportAssetWithAssetDB(savePath);
 
                 // : 원본 노드를 프리팹 인스턴스로 변환 시도
-                console.log('尝试将原始节点转换为预制体实例...');
+                console.log('원본 노드를 프리팹 인스턴스로 변환 시도...');
                 const convertResult = await this.convertNodeToPrefabInstance(nodeUuid, actualPrefabUuid, savePath);
                 
                 resolve({
@@ -749,7 +749,7 @@ export class PrefabTools implements ToolExecutor {
                 });
 
             } catch (error) {
-                console.error('创建预制体时发生错误:', error);
+                console.error('프리팹 생성 중 오류 발생:', error);
                 resolve({
                     success: false,
                     error: `创建预制体失败: ${error}`
@@ -779,7 +779,7 @@ export class PrefabTools implements ToolExecutor {
                 const includeComponents = args.includeComponents !== false; // 기본 true
 
                 // 우선 asset-db 생성프리팹
-                console.log('使用新的 asset-db 方法创建预制体...');
+                console.log('새 asset-db 방식으로 프리팹 생성 시도...');
                 const assetDbResult = await this.createPrefabWithAssetDB(
                     args.nodeUuid,
                     fullPath,
@@ -794,7 +794,7 @@ export class PrefabTools implements ToolExecutor {
                 }
 
                 // 만약 asset-db 실패, 시도 Cocos Creator 프리팹생성API
-                console.log('asset-db 方法失败，尝试原生API...');
+                console.log('asset-db 방식 실패, 네이티브 API 시도...');
                 const nativeResult = await this.createPrefabNative(args.nodeUuid, fullPath);
                 if (nativeResult.success) {
                     resolve(nativeResult);
@@ -802,7 +802,7 @@ export class PrefabTools implements ToolExecutor {
                 }
 
                 // 만약 API실패
-                console.log('原生API失败，使用自定义实现...');
+                console.log('네이티브 API 실패, 커스텀 구현 사용...');
                 const customResult = await this.createPrefabCustom(args.nodeUuid, fullPath, prefabName);
                 resolve(customResult);
 
@@ -847,11 +847,11 @@ export class PrefabTools implements ToolExecutor {
                 const prefabData = this.createPrefabData(nodeData, prefabName, prefabUuid);
 
                 // 4. 형식생성프리팹데이터구조
-                console.log('=== 开始创建预制体 ===');
-                console.log('节点名称:', nodeData.name?.value || '未知');
-                console.log('节点UUID:', nodeData.uuid?.value || '未知');
-                console.log('预制体保存路径:', prefabPath);
-                console.log(`开始创建预制体，节点数据:`, nodeData);
+                console.log('=== 프리팹 생성 시작 ===');
+                console.log('노드 이름:', nodeData.name?.value || '알 수 없음');
+                console.log('노드 UUID:', nodeData.uuid?.value || '알 수 없음');
+                console.log('프리팹 저장 경로:', prefabPath);
+                console.log(`프리팹 생성 시작, 노드 데이터:`, nodeData);
                 const prefabJsonData = await this.createStandardPrefabContent(nodeData, prefabName, prefabUuid, true, true);
 
                 // 5. 생성표준meta 데이터
@@ -903,19 +903,19 @@ export class PrefabTools implements ToolExecutor {
                     return;
                 }
 
-                console.log(`获取节点 ${nodeUuid} 的基本信息成功`);
+                console.log(`노드 ${nodeUuid} 기본 정보 조회 성공`);
                 
                 // query-node-tree가져오기 노드 구조
                 const nodeTree = await this.getNodeWithChildren(nodeUuid);
                 if (nodeTree) {
-                    console.log(`获取节点 ${nodeUuid} 的完整树结构成功`);
+                    console.log(`노드 ${nodeUuid} 전체 트리 구조 조회 성공`);
                     resolve(nodeTree);
                 } else {
-                    console.log(`使用基本节点信息`);
+                    console.log(`기본 노드 정보를 사용합니다`);
                     resolve(nodeInfo);
                 }
             } catch (error) {
-                console.warn(`获取节点数据失败 ${nodeUuid}:`, error);
+                console.warn(`노드 데이터 조회 실패 ${nodeUuid}:`, error);
                 resolve(null);
             }
         });
@@ -933,7 +933,7 @@ export class PrefabTools implements ToolExecutor {
             // 노드
             const targetNode = this.findNodeInTree(tree, nodeUuid);
             if (targetNode) {
-                console.log(`在场景树中找到节点 ${nodeUuid}，子节点数量: ${targetNode.children ? targetNode.children.length : 0}`);
+                console.log(`씬 트리에서 노드 ${nodeUuid} 발견, 자식 노드 수: ${targetNode.children ? targetNode.children.length : 0}`);
                 
                 // 노드 , 가져오기 노드 컴포넌트
                 const enhancedTree = await this.enhanceTreeWithMCPComponents(targetNode);
@@ -942,7 +942,7 @@ export class PrefabTools implements ToolExecutor {
 
             return null;
         } catch (error) {
-            console.warn(`获取节点树结构失败 ${nodeUuid}:`, error);
+            console.warn(`노드 트리 구조 조회 실패 ${nodeUuid}:`, error);
             return null;
         }
     }
@@ -1000,10 +1000,10 @@ export class PrefabTools implements ToolExecutor {
                         properties: this.extractComponentPropertiesFromNodeComp(comp)
                     };
                 });
-                console.log(`节点 ${node.uuid} 获取到 ${node.components.length} 个组件(含cid/scriptAsset)`);
+                console.log(`노드 ${node.uuid}에서 컴포넌트 ${node.components.length}개 조회(cID/scriptAsset 포함)`);
             }
         } catch (error) {
-            console.warn(`获取节点 ${node.uuid} 的组件信息失败:`, error);
+            console.warn(`노드 ${node.uuid}의 컴포넌트 정보 조회 실패:`, error);
         }
 
         // 자식 노드 재귀 처리
@@ -1102,11 +1102,11 @@ export class PrefabTools implements ToolExecutor {
         
         // 방법5: __id__ 참조 - 이 경우 특별 처리 필요
         if (childRef.__id__ !== undefined) {
-            console.log(`发现__id__引用: ${childRef.__id__}，可能需要从数据结构中查找`);
+            console.log(`__id__ 참조 발견: ${childRef.__id__}, 데이터 구조에서 추가 조회가 필요할 수 있습니다`);
             return null; // null, 참조
         }
         
-        console.warn('无法提取子节点UUID:', JSON.stringify(childRef));
+        console.warn('자식 노드 UUID를 추출할 수 없습니다:', JSON.stringify(childRef));
         return null;
     }
 
@@ -1116,18 +1116,18 @@ export class PrefabTools implements ToolExecutor {
         
         // 방법1: children 배열에서 직접 획득(query-node-tree 반환 데이터)
         if (nodeData.children && Array.isArray(nodeData.children)) {
-            console.log(`从children数组获取子节点，数量: ${nodeData.children.length}`);
+            console.log(`children 배열에서 자식 노드 조회, 개수: ${nodeData.children.length}`);
             for (const child of nodeData.children) {
                 // query-node-tree 노드 데이터구조
                 if (this.isValidNodeData(child)) {
                     children.push(child);
-                    console.log(`添加子节点: ${child.name || child.value?.name || '未知'}`);
+                    console.log(`자식 노드 추가: ${child.name || child.value?.name || '알 수 없음'}`);
                 } else {
-                    console.log('子节点数据无效:', JSON.stringify(child, null, 2));
+                    console.log('자식 노드 데이터가 유효하지 않음:', JSON.stringify(child, null, 2));
                 }
             }
         } else {
-            console.log('节点没有子节点或children数组为空');
+            console.log('노드에 자식이 없거나 children 배열이 비어 있습니다');
         }
         
         return children;
@@ -1330,7 +1330,7 @@ export class PrefabTools implements ToolExecutor {
 
             const trySave = (index: number) => {
                 if (index >= saveMethods.length) {
-                    reject(new Error('所有保存方法都失败了'));
+                    reject(new Error('모든 저장 방식이 실패했습니다'));
                     return;
                 }
 
@@ -1609,10 +1609,10 @@ export class PrefabTools implements ToolExecutor {
                 overwrite: true,
                 rename: false
             }).then((assetInfo: any) => {
-                console.log('创建资源文件成功:', assetInfo);
+                console.log('에셋 파일 생성 성공:', assetInfo);
                 resolve({ success: true, data: assetInfo });
             }).catch((error: any) => {
-                console.error('创建资源文件失败:', error);
+                console.error('에셋 파일 생성 실패:', error);
                 resolve({ success: false, error: error.message || '创建资源文件失败' });
             });
         });
@@ -1625,10 +1625,10 @@ export class PrefabTools implements ToolExecutor {
         return new Promise((resolve) => {
             const metaContentString = JSON.stringify(metaContent, null, 2);
             Editor.Message.request('asset-db', 'save-asset-meta', assetPath, metaContentString).then((assetInfo: any) => {
-                console.log('创建meta文件成功:', assetInfo);
+                console.log('meta 파일 생성 성공:', assetInfo);
                 resolve({ success: true, data: assetInfo });
             }).catch((error: any) => {
-                console.error('创建meta文件失败:', error);
+                console.error('meta 파일 생성 실패:', error);
                 resolve({ success: false, error: error.message || '创建meta文件失败' });
             });
         });
@@ -1640,10 +1640,10 @@ export class PrefabTools implements ToolExecutor {
     private async reimportAssetWithAssetDB(assetPath: string): Promise<{ success: boolean; data?: any; error?: string }> {
         return new Promise((resolve) => {
             Editor.Message.request('asset-db', 'reimport-asset', assetPath).then((result: any) => {
-                console.log('重新导入资源成功:', result);
+                console.log('에셋 재임포트 성공:', result);
                 resolve({ success: true, data: result });
             }).catch((error: any) => {
-                console.error('重新导入资源失败:', error);
+                console.error('에셋 재임포트 실패:', error);
                 resolve({ success: false, error: error.message || '重新导入资源失败' });
             });
         });
@@ -1655,10 +1655,10 @@ export class PrefabTools implements ToolExecutor {
     private async updateAssetWithAssetDB(assetPath: string, content: string): Promise<{ success: boolean; data?: any; error?: string }> {
         return new Promise((resolve) => {
             Editor.Message.request('asset-db', 'save-asset', assetPath, content).then((result: any) => {
-                console.log('更新资源文件成功:', result);
+                console.log('에셋 파일 업데이트 성공:', result);
                 resolve({ success: true, data: result });
             }).catch((error: any) => {
-                console.error('更新资源文件失败:', error);
+                console.error('에셋 파일 업데이트 실패:', error);
                 resolve({ success: false, error: error.message || '更新资源文件失败' });
             });
         });
@@ -1669,7 +1669,7 @@ export class PrefabTools implements ToolExecutor {
      * 재귀 노드 트리 처리를 완전 구현하여 엔진 표준 형식과 일치
      */
     private async createStandardPrefabContent(nodeData: any, prefabName: string, prefabUuid: string, includeChildren: boolean, includeComponents: boolean): Promise<any[]> {
-        console.log('开始创建引擎标准预制体内容...');
+        console.log('엔진 표준 프리팹 내용 생성 시작...');
         
         const prefabData: any[] = [];
         let currentId = 0;
@@ -1703,8 +1703,8 @@ export class PrefabTools implements ToolExecutor {
         // 루트 노드와 전체 노드 트리 생성 - 주의: 루트 노드의 부모는 프리팹 객체가 아닌 null이어야 함
         await this.createCompleteNodeTree(nodeData, null, 1, context, includeChildren, includeComponents, prefabName);
 
-        console.log(`预制体内容创建完成，总共 ${prefabData.length} 个对象`);
-        console.log('节点fileId映射:', Array.from(context.nodeFileIds.entries()));
+        console.log(`프리팹 내용 생성 완료, 총 ${prefabData.length}개 오브젝트`);
+        console.log('노드 fileId 매핑:', Array.from(context.nodeFileIds.entries()));
         
         return prefabData;
     }
@@ -1737,7 +1737,7 @@ export class PrefabTools implements ToolExecutor {
         while (prefabData.length <= nodeIndex) {
             prefabData.push(null);
         }
-        console.log(`设置节点到索引 ${nodeIndex}: ${node._name}, _parent:`, node._parent, `_children count: ${node._children.length}`);
+        console.log(`노드를 인덱스 ${nodeIndex}에 설정: ${node._name}, _parent:`, node._parent, `_children 개수: ${node._children.length}`);
         prefabData[nodeIndex] = node;
         
         // 현재 노드의 fileId를 생성하고 UUID-인덱스 매핑 기록
@@ -1748,25 +1748,25 @@ export class PrefabTools implements ToolExecutor {
         // 노드 UUID-인덱스 매핑 기록
         if (nodeUuid) {
             context.nodeUuidToIndex.set(nodeUuid, nodeIndex);
-            console.log(`记录节点UUID映射: ${nodeUuid} -> ${nodeIndex}`);
+            console.log(`노드 UUID 매핑 기록: ${nodeUuid} -> ${nodeIndex}`);
         }
 
         // 먼저 자식 노드를 처리(수동 생성 인덱스 순서와 일치 유지)
         const childrenToProcess = this.getChildrenToProcess(nodeData);
         if (includeChildren && childrenToProcess.length > 0) {
-            console.log(`处理节点 ${node._name} 的 ${childrenToProcess.length} 个子节点`);
+            console.log(`노드 ${node._name}의 자식 노드 ${childrenToProcess.length}개 처리`);
             
             // 각 자식 노드에 인덱스 할당
             const childIndices: number[] = [];
-            console.log(`准备为 ${childrenToProcess.length} 个子节点分配索引，当前ID: ${context.currentId}`);
+            console.log(`${childrenToProcess.length}개 자식 노드에 인덱스 할당 준비, 현재 ID: ${context.currentId}`);
             for (let i = 0; i < childrenToProcess.length; i++) {
-                console.log(`处理第 ${i+1} 个子节点，当前currentId: ${context.currentId}`);
+                console.log(`${i+1}번째 자식 노드 처리, 현재 currentId: ${context.currentId}`);
                 const childIndex = context.currentId++;
                 childIndices.push(childIndex);
                 node._children.push({ "__id__": childIndex });
-                console.log(`✅ 添加子节点引用到 ${node._name}: {__id__: ${childIndex}}`);
+                console.log(`✅ ${node._name}에 자식 노드 참조 추가: {__id__: ${childIndex}}`);
             }
-            console.log(`✅ 节点 ${node._name} 最终的子节点数组:`, node._children);
+            console.log(`✅ 노드 ${node._name} 최종 자식 노드 배열:`, node._children);
 
             // 자식 노드 재귀 생성
             for (let i = 0; i < childrenToProcess.length; i++) {
@@ -1786,7 +1786,7 @@ export class PrefabTools implements ToolExecutor {
 
         // 그다음 컴포넌트 처리
         if (includeComponents && nodeData.components && Array.isArray(nodeData.components)) {
-            console.log(`处理节点 ${node._name} 的 ${nodeData.components.length} 个组件`);
+            console.log(`노드 ${node._name}의 컴포넌트 ${nodeData.components.length}개 처리`);
             
             const componentIndices: number[] = [];
             for (const component of nodeData.components) {
@@ -1798,7 +1798,7 @@ export class PrefabTools implements ToolExecutor {
                 const componentUuid = component.uuid || (component.value && component.value.uuid);
                 if (componentUuid) {
                     context.componentUuidToIndex.set(componentUuid, componentIndex);
-                    console.log(`记录组件UUID映射: ${componentUuid} -> ${componentIndex}`);
+                    console.log(`컴포넌트 UUID 매핑 기록: ${componentUuid} -> ${componentIndex}`);
                 }
                 
                 // 컴포넌트 객체 생성 시 참조 처리를 위해 context 전달
@@ -1818,7 +1818,7 @@ export class PrefabTools implements ToolExecutor {
                 }
             }
             
-            console.log(`✅ 节点 ${node._name} 添加了 ${componentIndices.length} 个组件`);
+            console.log(`✅ 노드 ${node._name}에 컴포넌트 ${componentIndices.length}개 추가`);
         }
 
 
@@ -1904,7 +1904,7 @@ export class PrefabTools implements ToolExecutor {
         
         // 처리스크립트컴포넌트 - MCP인터페이스 압축UUID형식
         if (componentType && !componentType.startsWith('cc.')) {
-            console.log(`使用脚本组件压缩UUID类型: ${componentType}`);
+            console.log(`스크립트 컴포넌트 압축 UUID 타입 사용: ${componentType}`);
         }
         
         // 기본 컴포넌트 구조
@@ -2245,10 +2245,10 @@ export class PrefabTools implements ToolExecutor {
         const layer = getValue(nodeData.layer) || getValue(nodeData.value?.layer) || 1073741824;
 
         // 출력
-        console.log(`创建节点: ${name}, parentNodeIndex: ${parentNodeIndex}`);
+        console.log(`노드 생성: ${name}, parentNodeIndex: ${parentNodeIndex}`);
 
         const parentRef = parentNodeIndex !== null ? { "__id__": parentNodeIndex } : null;
-        console.log(`节点 ${name} 的父节点引用:`, parentRef);
+        console.log(`노드 ${name}의 부모 노드 참조:`, parentRef);
 
         return {
             "__type__": "cc.Node",
@@ -2402,7 +2402,7 @@ export class PrefabTools implements ToolExecutor {
         return new Promise((resolve) => {
             // 이 기능은 씬 에디터와의 심층 통합이 필요하여 현재 실패 반환
             // 실제 엔진에서는 복잡한 프리팹 인스턴스화/노드 교체 로직이 필요
-            console.log('节点转换为预制体实例的功能需要更深入的引擎集成');
+            console.log('노드를 프리팹 인스턴스로 변환하려면 더 깊은 엔진 통합이 필요합니다');
             resolve({
                 success: false,
                 error: '节点转换为预制体实例需要更深入的引擎集成支持'
@@ -2553,24 +2553,24 @@ export class PrefabTools implements ToolExecutor {
 
         // _getDependComponent 오류 방지를 위해 UITransform 컴포넌트 임시 건너뜀
         // 이후 Engine API로 동적 추가
-        console.log(`节点 ${name} 暂时跳过UITransform组件，避免引擎依赖错误`);
+        console.log(`노드 ${name}에서 엔진 의존 오류를 피하기 위해 UITransform 컴포넌트를 임시로 건너뜁니다`);
         
         // 다른 컴포넌트 처리(임시 건너뜀, UITransform 문제 해결에 집중)
         const components = this.extractComponentsFromNode(nodeData);
         if (components.length > 0) {
-            console.log(`节点 ${name} 包含 ${components.length} 个其他组件，暂时跳过以专注于UITransform修复`);
+            console.log(`노드 ${name}에 다른 컴포넌트 ${components.length}개가 있지만, UITransform 수정에 집중하기 위해 임시로 건너뜁니다`);
         }
 
         // 자식 노드 처리 - query-node-tree로 얻은 전체 구조 사용
         const childrenToProcess = this.getChildrenToProcess(nodeData);
         if (childrenToProcess.length > 0) {
-            console.log(`=== 处理子节点 ===`);
-            console.log(`节点 ${name} 包含 ${childrenToProcess.length} 个子节点`);
+            console.log(`=== 자식 노드 처리 ===`);
+            console.log(`노드 ${name}에 자식 노드 ${childrenToProcess.length}개 포함`);
             
             for (let i = 0; i < childrenToProcess.length; i++) {
                 const childData = childrenToProcess[i];
                 const childName = childData.name || childData.value?.name || '未知';
-                console.log(`处理第${i + 1}个子节点: ${childName}`);
+                console.log(`${i + 1}번째 자식 노드 처리: ${childName}`);
                 
                 try {
                     const childId = currentId;
@@ -2585,9 +2585,9 @@ export class PrefabTools implements ToolExecutor {
                     // 자식 노드의 _prefab은 null로 설정해야 함
                     childResult.node._prefab = null;
                     
-                    console.log(`✅ 成功添加子节点: ${childName}`);
+                    console.log(`✅ 자식 노드 추가 성공: ${childName}`);
                 } catch (error) {
-                    console.error(`处理子节点 ${childName} 时出错:`, error);
+                    console.error(`자식 노드 ${childName} 처리 중 오류:`, error);
                 }
             }
         }
@@ -2622,7 +2622,7 @@ export class PrefabTools implements ToolExecutor {
         const componentType = componentData.__type__ || componentData.type;
         
         if (!componentType) {
-            console.warn('组件缺少类型信息:', componentData);
+            console.warn('컴포넌트 타입 정보가 누락되었습니다:', componentData);
             return null;
         }
         
@@ -2895,15 +2895,15 @@ export class PrefabTools implements ToolExecutor {
                 });
             });
 
-            console.log(`=== 预制体保存完成 ===`);
-            console.log(`预制体文件已保存: ${finalPrefabPath}`);
-            console.log(`Meta文件已保存: ${metaPath}`);
-            console.log(`预制体数组总长度: ${prefabData.length}`);
-            console.log(`预制体根节点索引: ${prefabData.length - 1}`);
+            console.log(`=== 프리팹 저장 완료 ===`);
+            console.log(`프리팹 파일 저장됨: ${finalPrefabPath}`);
+            console.log(`Meta 파일 저장됨: ${metaPath}`);
+            console.log(`프리팹 배열 총 길이: ${prefabData.length}`);
+            console.log(`프리팹 루트 노드 인덱스: ${prefabData.length - 1}`);
 
             return { success: true };
         } catch (error: any) {
-            console.error('保存预制体文件时出错:', error);
+            console.error('프리팹 파일 저장 중 오류:', error);
             return { success: false, error: error.message };
         }
     }

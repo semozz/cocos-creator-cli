@@ -9,7 +9,7 @@ export class PrefabToolsTest {
     }
 
     async runAllTests() {
-        console.log('开始预制体工具测试...');
+        console.log('프리팹 도구 테스트 시작...');
         
         try {
             // 테스트1: 도구 목록 가져오기
@@ -27,44 +27,44 @@ export class PrefabToolsTest {
             // 테스트4: 프리팹 검증 테스트
             await this.testValidatePrefab();
             
-            console.log('所有测试完成！');
+            console.log('모든 테스트 완료!');
         } catch (error) {
-            console.error('测试过程中发生错误:', error);
+            console.error('테스트 진행 중 오류 발생:', error);
         }
     }
 
     private async testGetTools() {
-        console.log('测试1: 获取工具列表');
+        console.log('테스트1: 도구 목록 조회');
         const tools = this.prefabTools.getTools();
-        console.log(`找到 ${tools.length} 个工具:`);
+        console.log(`도구 ${tools.length}개 찾음:`);
         tools.forEach(tool => {
             console.log(`  - ${tool.name}: ${tool.description}`);
         });
-        console.log('测试1完成\n');
+        console.log('테스트1 완료\n');
     }
 
     private async testGetPrefabList() {
-        console.log('测试2: 获取预制体列表');
+        console.log('테스트2: 프리팹 목록 조회');
         try {
             const result = await this.prefabTools.execute('get_prefab_list', { folder: 'db://assets' });
             if (result.success) {
-                console.log(`找到 ${result.data?.length || 0} 个预制体`);
+                console.log(`프리팹 ${result.data?.length || 0}개 찾음`);
                 if (result.data && result.data.length > 0) {
                     result.data.slice(0, 3).forEach((prefab: any) => {
                         console.log(`  - ${prefab.name}: ${prefab.path}`);
                     });
                 }
             } else {
-                console.log('获取预制体列表失败:', result.error);
+                console.log('프리팹 목록 조회 실패:', result.error);
             }
         } catch (error) {
-            console.log('获取预制体列表时发生错误:', error);
+            console.log('프리팹 목록 조회 중 오류 발생:', error);
         }
-        console.log('测试2完成\n');
+        console.log('테스트2 완료\n');
     }
 
     private async testCreatePrefab() {
-        console.log('测试3: 测试预制体创建（模拟）');
+        console.log('테스트3: 프리팹 생성 테스트(모의)');
         try {
             // 프리팹 모의 생성
             const mockArgs = {
@@ -74,15 +74,15 @@ export class PrefabToolsTest {
             };
             
             const result = await this.prefabTools.execute('create_prefab', mockArgs);
-            console.log('创建预制体结果:', result);
+            console.log('프리팹 생성 결과:', result);
         } catch (error) {
-            console.log('创建预制体时发生错误:', error);
+            console.log('프리팹 생성 중 오류 발생:', error);
         }
-        console.log('测试3完成\n');
+        console.log('테스트3 완료\n');
     }
 
     private async testInstantiatePrefab() {
-        console.log('测试3.5: 测试预制体实例化（模拟）');
+        console.log('테스트3.5: 프리팹 인스턴스화 테스트(모의)');
         try {
             // 프리팹 모의 인스턴스화
             const mockArgs = {
@@ -92,18 +92,18 @@ export class PrefabToolsTest {
             };
             
             const result = await this.prefabTools.execute('instantiate_prefab', mockArgs);
-            console.log('实例化预制体结果:', result);
+            console.log('프리팹 인스턴스화 결과:', result);
             
             // API 파라미터 구성 테스트
             this.testCreateNodeAPIParams();
         } catch (error) {
-            console.log('实例化预制体时发生错误:', error);
+            console.log('프리팹 인스턴스화 중 오류 발생:', error);
         }
-        console.log('测试3.5完成\n');
+        console.log('테스트3.5 완료\n');
     }
 
     private testCreateNodeAPIParams() {
-        console.log('测试 create-node API 参数构建...');
+        console.log('create-node API 파라미터 구성 테스트...');
         
         // assetUuid 모의 설정
         const assetUuid = 'mock-prefab-uuid';
@@ -113,14 +113,14 @@ export class PrefabToolsTest {
             assetUuid: assetUuid,
             name: 'TestPrefabInstance'
         };
-        console.log('基本参数:', basicOptions);
+        console.log('기본 파라미터:', basicOptions);
         
         // 부모 노드 포함 파라미터 테스트
         const withParentOptions = {
             ...basicOptions,
             parent: 'parent-node-uuid'
         };
-        console.log('带父节点参数:', withParentOptions);
+        console.log('부모 노드 포함 파라미터:', withParentOptions);
         
         // 위치 포함 파라미터 테스트
         const withPositionOptions = {
@@ -129,7 +129,7 @@ export class PrefabToolsTest {
                 position: { x: 100, y: 200, z: 0 }
             }
         };
-        console.log('带位置参数:', withPositionOptions);
+        console.log('위치 포함 파라미터:', withPositionOptions);
         
         // 전체 파라미터 테스트
         const fullOptions = {
@@ -142,26 +142,26 @@ export class PrefabToolsTest {
             keepWorldTransform: false,
             unlinkPrefab: false
         };
-        console.log('完整参数:', fullOptions);
+        console.log('전체 파라미터:', fullOptions);
     }
 
     private async testValidatePrefab() {
-        console.log('测试4: 测试预制体验证');
+        console.log('테스트4: 프리팹 검증 테스트');
         try {
             // 존재하지 않는 프리팹 검증 테스트
             const result = await this.prefabTools.execute('validate_prefab', { 
                 prefabPath: 'db://assets/nonexistent.prefab' 
             });
-            console.log('验证预制体结果:', result);
+            console.log('프리팹 검증 결과:', result);
         } catch (error) {
-            console.log('验证预制体时发生错误:', error);
+            console.log('프리팹 검증 중 오류 발생:', error);
         }
-        console.log('测试4完成\n');
+        console.log('테스트4 완료\n');
     }
 
     // 프리팹 데이터 구조 생성 테스트
     testPrefabDataGeneration() {
-        console.log('测试预制体数据结构生成...');
+        console.log('프리팹 데이터 구조 생성 테스트...');
         
         const mockNodeData = {
             name: 'TestNode',
@@ -184,19 +184,19 @@ export class PrefabToolsTest {
         const prefabUuid = this.prefabTools['generateUUID']();
         const prefabData = this.prefabTools['createPrefabData'](mockNodeData, 'TestPrefab', prefabUuid);
         
-        console.log('生成的预制体数据结构:');
+        console.log('생성된 프리팹 데이터 구조:');
         console.log(JSON.stringify(prefabData, null, 2));
         
         // 데이터 구조 검증
         const validationResult = this.prefabTools['validatePrefabFormat'](prefabData);
-        console.log('验证结果:', validationResult);
+        console.log('검증 결과:', validationResult);
         
-        console.log('预制体数据结构生成测试完成\n');
+        console.log('프리팹 데이터 구조 생성 테스트 완료\n');
     }
 
     // UUID 생성 테스트
     testUUIDGeneration() {
-        console.log('测试UUID生成...');
+        console.log('UUID 생성 테스트...');
         
         const uuids = [];
         for (let i = 0; i < 5; i++) {
@@ -209,8 +209,8 @@ export class PrefabToolsTest {
         const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         const validUuids = uuids.filter(uuid => uuidPattern.test(uuid));
         
-        console.log(`UUID格式验证: ${validUuids.length}/${uuids.length} 个有效`);
-        console.log('UUID生成测试完成\n');
+        console.log(`UUID 형식 검증: ${validUuids.length}/${uuids.length}개 유효`);
+        console.log('UUID 생성 테스트 완료\n');
     }
 }
 

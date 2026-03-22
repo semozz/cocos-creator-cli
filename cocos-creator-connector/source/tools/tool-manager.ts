@@ -252,7 +252,7 @@ export class ToolManager {
 
     public createConfiguration(name: string, description?: string): ToolConfiguration {
         if (this.settings.configurations.length >= this.settings.maxConfigSlots) {
-            throw new Error(`已达到最大配置槽位数量 (${this.settings.maxConfigSlots})`);
+            throw new Error(`최대 설정 슬롯 수에 도달했습니다 (${this.settings.maxConfigSlots})`);
         }
 
         const config: ToolConfiguration = {
@@ -274,7 +274,7 @@ export class ToolManager {
     public updateConfiguration(configId: string, updates: Partial<ToolConfiguration>): ToolConfiguration {
         const configIndex = this.settings.configurations.findIndex(config => config.id === configId);
         if (configIndex === -1) {
-            throw new Error('配置不存在');
+            throw new Error('설정을 찾을 수 없습니다');
         }
 
         const config = this.settings.configurations[configIndex];
@@ -293,7 +293,7 @@ export class ToolManager {
     public deleteConfiguration(configId: string): void {
         const configIndex = this.settings.configurations.findIndex(config => config.id === configId);
         if (configIndex === -1) {
-            throw new Error('配置不存在');
+            throw new Error('설정을 찾을 수 없습니다');
         }
 
         this.settings.configurations.splice(configIndex, 1);
@@ -311,7 +311,7 @@ export class ToolManager {
     public setCurrentConfiguration(configId: string): void {
         const config = this.settings.configurations.find(config => config.id === configId);
         if (!config) {
-            throw new Error('配置不存在');
+            throw new Error('설정을 찾을 수 없습니다');
         }
 
         this.settings.currentConfigId = configId;
@@ -324,7 +324,7 @@ export class ToolManager {
         const config = this.settings.configurations.find(config => config.id === configId);
         if (!config) {
             console.error(`Backend: Config not found with ID: ${configId}`);
-            throw new Error('配置不存在');
+            throw new Error('설정을 찾을 수 없습니다');
         }
 
         console.log(`Backend: Found config: ${config.name}`);
@@ -332,7 +332,7 @@ export class ToolManager {
         const tool = config.tools.find(t => t.category === category && t.name === toolName);
         if (!tool) {
             console.error(`Backend: Tool not found - category: ${category}, name: ${toolName}`);
-            throw new Error('工具不存在');
+            throw new Error('도구를 찾을 수 없습니다');
         }
 
         console.log(`Backend: Found tool: ${tool.name}, current enabled: ${tool.enabled}, new enabled: ${enabled}`);
@@ -354,7 +354,7 @@ export class ToolManager {
         if (!config) {
             console.error(`Backend: Config not found with ID: ${configId}`);
             console.error(`Backend: Available config IDs:`, this.settings.configurations.map(c => c.id));
-            throw new Error('配置不存在');
+            throw new Error('설정을 찾을 수 없습니다');
         }
 
         console.log(`Backend: Found config: ${config.name}, updating ${updates.length} tools`);
@@ -374,7 +374,7 @@ export class ToolManager {
     public exportConfiguration(configId: string): string {
         const config = this.settings.configurations.find(config => config.id === configId);
         if (!config) {
-            throw new Error('配置不存在');
+            throw new Error('설정을 찾을 수 없습니다');
         }
 
         return this.exportToolConfiguration(config);
@@ -389,7 +389,7 @@ export class ToolManager {
         config.updatedAt = new Date().toISOString();
 
         if (this.settings.configurations.length >= this.settings.maxConfigSlots) {
-            throw new Error(`已达到最大配置槽位数量 (${this.settings.maxConfigSlots})`);
+            throw new Error(`최대 설정 슬롯 수에 도달했습니다 (${this.settings.maxConfigSlots})`);
         }
 
         this.settings.configurations.push(config);
